@@ -1,0 +1,55 @@
+:root {
+  /* Colores */
+  --color-primary: #299d98;
+  --color-primary-dark: #247c7c;
+  --color-secondary: #83d0cc;
+  --color-accent-light: #c2ece9;
+  --color-bg-light: #e9f7f6;
+  --color-bg: #f8f8f8;
+  --color-card: #ffffff;
+  --color-text: #000000;
+  --color-text-secondary: #979797;
+  --color-border: #d9d9d9;
+  --color-error: #d64545;
+  --color-success: #299d98;
+  --color-white: #ffffff;
+
+  /* Tipografía */
+  --font-poppins: 'Poppins', sans-serif;
+  --font-nunito: 'Nunito', sans-serif;
+
+  --font-weight-regular: 400;
+  --font-weight-medium: 500;
+  --font-weight-semibold: 600;
+  --font-weight-bold: 700;
+
+  /* Tamaños */
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-base: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.375rem;
+  --text-2xl: 1.5rem;
+
+  /* Espaciado */
+  --space-1: 0.25rem;
+  --space-2: 0.5rem;
+  --space-3: 0.75rem;
+  --space-4: 1rem;
+  --space-5: 1.25rem;
+  --space-6: 1.5rem;
+  --space-8: 2rem;
+  --space-10: 2.5rem;
+
+  /* Bordes y sombras */
+  --radius-sm: 6px;
+  --radius-md: 10px;
+  --radius-lg: 12px;
+  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --shadow-focus: 0 0 0 3px var(--color-accent-light);
+
+  /* Componentes */
+  --input-height: 46px;
+  --card-max-width: 440px;
+  --transition: 150ms ease;
+}
