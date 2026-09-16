@@ -1,9 +1,10 @@
-import { Body, Controller, Post, UseGuards } from '@nestjs/common';
+import { Body, Controller, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioRow } from '../common/usuario.util';
 import { CreateRequestDto } from './dto/create-request.dto';
+import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
 import { RequestsService } from './requests.service';
 
 @ApiTags('Requests')
@@ -21,5 +22,19 @@ export class RequestsController {
   })
   create(@CurrentUser() user: UsuarioRow, @Body() dto: CreateRequestDto) {
     return this.requests.create(user, dto);
+  }
+
+  @Put(':id/status')
+  @ApiOperation({
+    summary: 'Cambiar estado de una solicitud (HU-14, HU-15)',
+    description:
+      'Máquina de estados transaccional. Aceptar/Rechazar: trabajador sobre Enviada. Cancelar: cliente sobre Enviada o Aceptada. Finalizar: cliente o trabajador sobre Aceptada. Impide saltos inválidos y condiciones de carrera.',
+  })
+  updateStatus(
+    @CurrentUser() user: UsuarioRow,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRequestStatusDto,
+  ) {
+    return this.requests.updateStatus(user, id, dto);
   }
 }

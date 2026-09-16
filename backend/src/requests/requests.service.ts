@@ -8,8 +8,12 @@ import {
 import { UsuarioRow } from '../common/usuario.util';
 import { SupabaseService } from '../supabase/supabase.service';
 import { CreateRequestDto } from './dto/create-request.dto';
-
-export const ESTADO_SOLICITUD_INICIAL = 'Enviada';
+import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
+import {
+  actorPuede,
+  ESTADO_SOLICITUD_INICIAL,
+  resolveTransition,
+} from './request-state';
 
 type SolicitudRow = {
   id_solicitud: number;
@@ -81,7 +85,91 @@ export class RequestsService {
     return this.present(saved, perfil, servicio);
   }
 
-  private present(row: SolicitudRow, perfil: PerfilRow, servicio: ServicioRow) {
+  async updateStatus(usuario: UsuarioRow, idSolicitud: number, dto: UpdateRequestStatusDto) {
+    const solicitud = await this.findSolicitud(idSolicitud);
+    if (!solicitud) {
+      throw new NotFoundException('La solicitud no existe.');
+    }
+
+    const perfil = await this.findPerfil(solicitud.id_trabajador);
+    if (!perfil) {
+      throw new NotFoundException('El trabajador de la solicitud ya no existe.');
+    }
+
+    const esCliente = solicitud.id_cliente === usuario.id_usuario;
+    const esTrabajador = perfil.id_usuario === usuario.id_usuario;
+    if (!esCliente && !esTrabajador) {
+      throw new ForbiddenException('No puedes cambiar el estado de esta solicitud.');
+    }
+
+    const transicion = resolveTransition(solicitud.estado, dto.accion);
+    if (!transicion.ok) {
+      throw new BadRequestException(transicion.mensaje);
+    }
+    if (!actorPuede(transicion.rol, esCliente, esTrabajador)) {
+      throw new ForbiddenException(
+        `Solo el ${transicion.rol === 'trabajador' ? 'trabajador' : 'cliente'} puede ${dto.accion.toLowerCase()} esta solicitud.`,
+      );
+    }
+
+    const saved =
+      (await this.updateStatusViaRpc(idSolicitud, usuario.id_usuario, dto.accion)) ||
+      (await this.updateStatusLocked(solicitud, transicion.next));
+
+    const servicio = await this.findServicio(saved.id_servicio);
+    await this.registrarBitacora(
+      usuario.id_usuario,
+      `STATUS_${dto.accion.toUpperCase()}`,
+      'solicitud_servicio',
+    );
+    return this.present(saved, perfil, servicio);
+  }
+
+  private async updateStatusViaRpc(idSolicitud: number, idActor: number, accion: string) {
+    const { data, error } = await this.supabase.admin.rpc('cambiar_estado_solicitud', {
+      p_id_solicitud: idSolicitud,
+      p_id_actor: idActor,
+      p_accion: accion,
+    });
+
+    if (error) {
+      if (this.isMissingRpc(error.message)) return null;
+      if (/INVALID_TRANSITION/i.test(error.message)) {
+        throw new BadRequestException(error.message.replace(/^INVALID_TRANSITION:\s*/i, ''));
+      }
+      if (/FORBIDDEN/i.test(error.message)) {
+        throw new ForbiddenException('No puedes cambiar el estado de esta solicitud.');
+      }
+      if (/NOT_FOUND/i.test(error.message)) {
+        throw new NotFoundException('La solicitud no existe.');
+      }
+      if (/CONFLICT|40001/i.test(error.message)) {
+        throw new ConflictException('La solicitud cambió de estado. Recarga e inténtalo de nuevo.');
+      }
+      throw new BadRequestException(error.message);
+    }
+
+    if (!data) return null;
+    return data as SolicitudRow;
+  }
+
+  private async updateStatusLocked(solicitud: SolicitudRow, next: string) {
+    const { data, error } = await this.supabase
+      .from('solicitud_servicio')
+      .update({ estado: next })
+      .eq('id_solicitud', solicitud.id_solicitud)
+      .eq('estado', solicitud.estado)
+      .select('*')
+      .maybeSingle();
+
+    if (error) throw new BadRequestException(error.message);
+    if (!data) {
+      throw new ConflictException('La solicitud cambió de estado. Recarga e inténtalo de nuevo.');
+    }
+    return data as SolicitudRow;
+  }
+
+  private present(row: SolicitudRow, perfil: PerfilRow, servicio: ServicioRow | null) {
     return {
       id_solicitud: row.id_solicitud,
       id_cliente: row.id_cliente,
@@ -96,11 +184,23 @@ export class RequestsService {
         id_perfil: perfil.id_perfil,
         oficio_principal: perfil.oficio_principal,
       },
-      servicio: {
-        id_servicio: servicio.id_servicio,
-        nombre: servicio.nombre,
-      },
+      servicio: servicio
+        ? {
+            id_servicio: servicio.id_servicio,
+            nombre: servicio.nombre,
+          }
+        : null,
     };
+  }
+
+  private async findSolicitud(idSolicitud: number) {
+    const { data, error } = await this.supabase
+      .from('solicitud_servicio')
+      .select('*')
+      .eq('id_solicitud', idSolicitud)
+      .maybeSingle();
+    if (error) throw new BadRequestException(error.message);
+    return (data as SolicitudRow) || null;
   }
 
   private async findPerfil(idPerfil: number) {
@@ -191,5 +291,10 @@ export class RequestsService {
       const nextId = await this.nextId('bitacora', 'id_evento');
       await this.supabase.from('bitacora').insert({ ...payload, id_evento: nextId });
     }
+  }
+
+  private isMissingRpc(message?: string) {
+    if (!message) return false;
+    return /could not find the function|schema cache|does not exist|pgrst202/i.test(message);
   }
 }

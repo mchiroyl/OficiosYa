@@ -19,6 +19,8 @@ type PerfilRow = {
   disponibilidad: string | null;
   contacto_visible: boolean;
   verificado: boolean;
+  reputacion_promedio?: number | null;
+  total_resenas?: number | null;
 };
 
 type ZonaRow = {
@@ -112,6 +114,7 @@ export class WorkerService {
     const extras = parseProfileExtras(perfil.descripcion);
     const cobertura = await this.listCobertura(perfil.id_perfil);
     const disponibilidad = normalizeDisponibilidad(perfil.disponibilidad);
+    const reputacion = await this.loadReputacion(perfil);
 
     return {
       id_perfil: perfil.id_perfil,
@@ -123,10 +126,39 @@ export class WorkerService {
       verificado: perfil.verificado,
       disponibilidad,
       estado_publico: disponibilidad,
+      reputacion: reputacion.reputacion,
+      total_resenas: reputacion.total_resenas,
       tarifas: extras.tarifas,
       horarios: extras.horarios,
       cobertura,
     };
+  }
+
+  private async loadReputacion(perfil: PerfilRow) {
+    if (perfil.reputacion_promedio != null && perfil.total_resenas != null) {
+      return {
+        reputacion: Number(perfil.reputacion_promedio) || 0,
+        total_resenas: Number(perfil.total_resenas) || 0,
+      };
+    }
+
+    const { data, error } = await this.supabase
+      .from('resena')
+      .select('calificacion')
+      .eq('id_trabajador', perfil.id_perfil);
+    if (error) return { reputacion: 0, total_resenas: 0 };
+    const rows = data || [];
+    const total = rows.length;
+    const reputacion =
+      total === 0
+        ? 0
+        : Number(
+            (
+              rows.reduce((sum: number, row: { calificacion: number }) => sum + Number(row.calificacion), 0) /
+              total
+            ).toFixed(2),
+          );
+    return { reputacion, total_resenas: total };
   }
 
   private async findPerfil(idUsuario: number) {
