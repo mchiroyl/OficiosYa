@@ -49,12 +49,10 @@ function AppRoutes({ mode, onModeChange }) {
   }
 
   if (isAuthenticated && !AUTH_PATHS.has(path)) {
-    const page = path === '/worker/profile' ? <WorkerProfile /> : <Home />;
-    return (
-      <PageShell mode={mode} onModeChange={onModeChange}>
-        {page}
-      </PageShell>
-    );
+    if (path === '/worker/profile') {
+      return <WorkerProfile />;
+    }
+    return <Home />;
   }
 
   const content =
