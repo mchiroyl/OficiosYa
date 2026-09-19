@@ -1,4 +1,5 @@
 import { useEffect, useState } from 'react';
+import BackLink from '../components/BackLink';
 import Button from '../components/ui/Button';
 import Checkbox from '../components/ui/Checkbox';
 import { useAuth } from '../auth/AuthContext';
@@ -128,7 +129,10 @@ export default function WorkerProfile() {
   if (loading) {
     return (
       <div className={styles.page}>
-        <div className={styles.loading}>Cargando perfil...</div>
+        <div className={styles.inner}>
+          <BackLink to="/">Volver al menú principal</BackLink>
+          <div className={styles.loading}>Cargando perfil...</div>
+        </div>
       </div>
     );
   }
@@ -136,6 +140,7 @@ export default function WorkerProfile() {
   return (
     <div className={styles.page}>
       <div className={styles.inner}>
+        <BackLink to="/">Volver al menú principal</BackLink>
         <header className={styles.header}>
           <h1 className={styles.title}>Tarifas y cobertura</h1>
           <p className={styles.subtitle}>

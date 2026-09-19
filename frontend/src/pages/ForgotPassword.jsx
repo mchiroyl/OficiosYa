@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Logo from '../components/Logo';
+import BackLink from '../components/BackLink';
 import Input from '../components/ui/Input';
 import Button from '../components/ui/Button';
 import { MailIcon } from '../components/icons/Icons';
@@ -47,6 +48,7 @@ export default function ForgotPassword() {
 
   return (
     <div className={authStyles.card}>
+      <BackLink to="/login">Volver al inicio de sesión</BackLink>
       <Logo />
 
       <header className={authStyles.header}>
@@ -88,10 +90,6 @@ export default function ForgotPassword() {
       <p className={authStyles.footer}>
         <Link to="/reset-password" className={authStyles.footerLink}>
           Ya tengo un código
-        </Link>
-        {' · '}
-        <Link to="/login" className={authStyles.footerLink}>
-          Volver a iniciar sesión
         </Link>
       </p>
     </div>

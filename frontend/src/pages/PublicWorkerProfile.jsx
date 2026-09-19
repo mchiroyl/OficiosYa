@@ -1,4 +1,5 @@
 ﻿import { useState } from 'react';
+import BackLink from '../components/BackLink';
 import Button from '../components/ui/Button';
 import Rating from '../components/worker/Rating';
 import WorkerGallery from '../components/worker/WorkerGallery';
@@ -25,6 +26,7 @@ export default function PublicWorkerProfile({ workerId }) {
     return (
       <div className={styles.page}>
         <div className={styles.notFound}>
+          <BackLink to="/">Volver al menú principal</BackLink>
           <h1 className={styles.notFoundTitle}>Trabajador no encontrado</h1>
           <p className={styles.notFoundText}>
             El perfil que buscas no está disponible o el enlace no es válido.
@@ -44,6 +46,7 @@ export default function PublicWorkerProfile({ workerId }) {
   return (
     <div className={styles.page}>
       <article className={styles.layout}>
+        <BackLink to="/">Volver al menú principal</BackLink>
         {/* —— Información principal —— */}
         <header className={styles.heroCard}>
           <div className={styles.heroTop}>

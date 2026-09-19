@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import Logo from '../components/Logo';
+import BackLink from '../components/BackLink';
 import Input from '../components/ui/Input';
 import PasswordInput from '../components/ui/PasswordInput';
 import Button from '../components/ui/Button';
 import { LockIcon, MailIcon } from '../components/icons/Icons';
-import { Link, useNavigate } from '../router';
+import { useNavigate } from '../router';
 import { useAuth } from '../auth/AuthContext';
 import authStyles from '../styles/auth.module.css';
 
@@ -89,6 +90,7 @@ export default function ResetPassword() {
 
   return (
     <div className={authStyles.card}>
+      <BackLink to="/login">Volver al inicio de sesión</BackLink>
       <Logo />
 
       <header className={authStyles.header}>
@@ -173,12 +175,6 @@ export default function ResetPassword() {
           Guardar contraseña
         </Button>
       </form>
-
-      <p className={authStyles.footer}>
-        <Link to="/login" className={authStyles.footerLink}>
-          Volver a iniciar sesión
-        </Link>
-      </p>
     </div>
   );
 }

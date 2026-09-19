@@ -1,5 +1,6 @@
 import { useState } from 'react';
 import Logo from '../components/Logo';
+import BackLink from '../components/BackLink';
 import Input from '../components/ui/Input';
 import PasswordInput from '../components/ui/PasswordInput';
 import Button from '../components/ui/Button';
@@ -205,6 +206,7 @@ export default function Register({ mode = 'client' }) {
 
   return (
     <div className={authStyles.card}>
+      <BackLink to="/login">Volver al inicio de sesión</BackLink>
       <Logo />
 
       <header className={authStyles.header}>
