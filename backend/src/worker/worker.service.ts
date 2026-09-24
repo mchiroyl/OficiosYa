@@ -37,7 +37,7 @@ export class WorkerService {
   async getProfile(usuario: UsuarioRow) {
     const perfil = await this.findPerfil(usuario.id_usuario);
     if (!perfil) {
-      throw new NotFoundException('Aún no tienes un perfil de trabajador.');
+      return this.presentDraft(usuario);
     }
     return this.present(perfil);
   }
@@ -85,7 +85,7 @@ export class WorkerService {
     };
 
     if (!payload.oficio_principal) {
-      throw new BadRequestException('El oficio principal es obligatorio para crear el perfil.');
+      payload.oficio_principal = existing?.oficio_principal || usuario.nombre || 'Servicios generales';
     }
 
     const saved = existing
@@ -112,6 +112,26 @@ export class WorkerService {
     return this.present(saved);
   }
 
+  private presentDraft(usuario: UsuarioRow) {
+    return {
+      id_perfil: null,
+      id_usuario: usuario.id_usuario,
+      oficio_principal: '',
+      descripcion: '',
+      experiencia: null,
+      contacto_visible: true,
+      verificado: false,
+      disponibilidad: 'Disponible',
+      estado_publico: 'Disponible',
+      reputacion: 0,
+      total_resenas: 0,
+      tarifas: null,
+      horarios: [],
+      cobertura: [],
+      existe: false,
+    };
+  }
+
   private async present(perfil: PerfilRow) {
     const extras = parseProfileExtras(perfil.descripcion);
     const cobertura = await this.listCobertura(perfil.id_perfil);
@@ -133,6 +153,7 @@ export class WorkerService {
       tarifas: extras.tarifas,
       horarios: extras.horarios,
       cobertura,
+      existe: true,
     };
   }
 

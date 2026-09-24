@@ -26,7 +26,7 @@ function AppRoutes({ mode, onModeChange }) {
     // Perfil público del trabajador (vista cliente): accesible sin forzar login.
     if (publicWorkerParams) return;
 
-    if (isAuthenticated && AUTH_PATHS.has(path)) {
+    if (isAuthenticated && path === '/login') {
       navigate('/', { replace: true });
       return;
     }
@@ -50,7 +50,11 @@ function AppRoutes({ mode, onModeChange }) {
 
   if (isAuthenticated && !AUTH_PATHS.has(path)) {
     if (path === '/worker/profile') {
-      return <WorkerProfile />;
+      return (
+        <PageShell mode={mode} onModeChange={onModeChange}>
+          <WorkerProfile />
+        </PageShell>
+      );
     }
     return <Home />;
   }

@@ -66,16 +66,36 @@ export default function WorkerProfile() {
           notas: current.notas || '',
         });
         setCobertura((profile.cobertura || []).map((zona) => zona.id_zona));
+
+        try {
+          const raw = sessionStorage.getItem('oficiosya.registerSuccess');
+          if (raw) {
+            sessionStorage.removeItem('oficiosya.registerSuccess');
+            const created = JSON.parse(raw);
+            setSuccess(created.message || 'Cuenta creada exitosamente.');
+          }
+        } catch {
+          // ignore
+        }
       } catch (err) {
         if (!cancelled) {
-          setError(err.message || 'No se pudo cargar el perfil.');
+          if (err.status === 404) {
+            setError('');
+          } else {
+            setError(err.message || 'No se pudo cargar el perfil.');
+          }
         }
       } finally {
         if (!cancelled) setLoading(false);
       }
     }
 
-    if (token) load();
+    if (token) {
+      load();
+    } else {
+      setLoading(false);
+      setError('Debes iniciar sesión para ver tu perfil.');
+    }
     return () => {
       cancelled = true;
     };
@@ -118,7 +138,7 @@ export default function WorkerProfile() {
       }
 
       await updateWorkerProfile(payload, token);
-      setSuccess('Tarifas y zonas de cobertura actualizadas correctamente.');
+      setSuccess('Datos actualizados correctamente.');
     } catch (err) {
       setError(err.message || 'No se pudo guardar los cambios.');
     } finally {

@@ -75,8 +75,20 @@ export class AuthService {
     });
 
     await this.registrarBitacora(usuario.id_usuario, 'REGISTER', 'usuario');
+    await this.ensureWorkerProfile(usuario, dto);
 
-    const session = await this.signIn(correo, dto.password);
+    const session = await this.signInAfterRegister(correo, dto.password, usuario);
+    if (!session) {
+      return {
+        user: publicUsuario(usuario),
+        tokens: null,
+        rememberMe: false,
+        tienePerfilTrabajador: Boolean(await this.findPerfil(usuario.id_usuario)),
+        perfilTrabajador: await this.findPerfil(usuario.id_usuario),
+        needsLogin: true,
+        message: 'Cuenta creada exitosamente. Inicia sesión para continuar.',
+      };
+    }
     return this.buildAuthResponse(usuario, session, false);
   }
 
@@ -447,6 +459,46 @@ export class AuthService {
     }
 
     await this.ensureAuthUser(usuario, password);
+  }
+
+  private async signInAfterRegister(correo: string, password: string, usuario: UsuarioRow) {
+    let session = await this.trySignIn(correo, password);
+    if (session) return session;
+
+    await this.ensureAuthUser(usuario, password);
+    for (let attempt = 0; attempt < 3 && !session; attempt += 1) {
+      await new Promise((resolve) => setTimeout(resolve, 250 * (attempt + 1)));
+      session = await this.trySignIn(correo, password);
+    }
+    return session;
+  }
+
+  private async ensureWorkerProfile(usuario: UsuarioRow, dto: RegisterDto) {
+    if ((dto.modo || 'cliente') !== 'trabajador') return;
+    const existing = await this.findPerfil(usuario.id_usuario);
+    if (existing) return;
+
+    const payload = {
+      id_usuario: usuario.id_usuario,
+      oficio_principal: dto.oficio_principal?.trim() || usuario.nombre,
+      descripcion: dto.descripcion?.trim() || null,
+      experiencia: dto.experiencia?.trim() || null,
+      disponibilidad: 'Disponible',
+      contacto_visible: true,
+      verificado: false,
+    };
+
+    const { error } = await this.supabase.from('perfil_trabajador').insert(payload);
+    if (!error) return;
+    if (/null value in column ["']?id_perfil["']?/i.test(error.message)) {
+      const { data } = await this.supabase
+        .from('perfil_trabajador')
+        .select('id_perfil')
+        .order('id_perfil', { ascending: false })
+        .limit(1);
+      const nextId = (data?.[0]?.id_perfil || 0) + 1;
+      await this.supabase.from('perfil_trabajador').insert({ ...payload, id_perfil: nextId });
+    }
   }
 
   private async signIn(correo: string, password: string) {

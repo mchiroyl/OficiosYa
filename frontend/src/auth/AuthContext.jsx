@@ -98,11 +98,15 @@ export function AuthProvider({ children }) {
   );
 
   const register = useCallback(async (payload) => {
-    return api('/auth/register', {
+    const data = await api('/auth/register', {
       method: 'POST',
       body: payload,
     });
-  }, []);
+    if (data?.tokens?.accessToken) {
+      applyAuthResponse(data, false);
+    }
+    return data;
+  }, [applyAuthResponse]);
 
   const logout = useCallback(async () => {
     const current = readSession();

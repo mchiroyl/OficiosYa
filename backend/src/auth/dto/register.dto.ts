@@ -48,4 +48,22 @@ export class RegisterDto {
     message: 'El modo debe ser cliente o trabajador.',
   })
   modo?: 'cliente' | 'trabajador';
+
+  @ApiPropertyOptional({ example: 'Plomería' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(150)
+  oficio_principal?: string;
+
+  @ApiPropertyOptional({ example: 'Reparaciones residenciales.' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(2000)
+  descripcion?: string;
+
+  @ApiPropertyOptional({ example: '5 años' })
+  @IsOptional()
+  @IsString()
+  @MaxLength(100)
+  experiencia?: string;
 }

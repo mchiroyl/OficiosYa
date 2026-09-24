@@ -177,26 +177,47 @@ export default function Register({ mode = 'client' }) {
         telefono: phone.trim() || undefined,
         password,
         modo: isWorker ? 'trabajador' : 'cliente',
+        oficio_principal: isWorker ? oficio.trim() : undefined,
+        descripcion: isWorker ? descripcion.trim() || undefined : undefined,
+        experiencia: isWorker ? experiencia.trim() || undefined : undefined,
       });
 
-      if (isWorker) {
-        await updateWorkerProfile(
-          {
-            oficio_principal: oficio.trim(),
-            descripcion: descripcion.trim() || undefined,
-            experiencia: experiencia.trim() || undefined,
-          },
-          data.tokens.accessToken,
-        );
+      if (isWorker && data.tokens?.accessToken) {
+        try {
+          await updateWorkerProfile(
+            {
+              oficio_principal: oficio.trim(),
+              descripcion: descripcion.trim() || undefined,
+              experiencia: experiencia.trim() || undefined,
+            },
+            data.tokens.accessToken,
+          );
+        } catch {
+          // El registro ya creó la cuenta; el perfil se puede completar después.
+        }
       }
 
       sessionStorage.setItem(
         'oficiosya.registerSuccess',
-        JSON.stringify({ correo: email.trim() }),
+        JSON.stringify({
+          correo: email.trim(),
+          message: 'Cuenta creada exitosamente.',
+          goToProfile: isWorker,
+        }),
       );
-      navigate('/login', { replace: true });
+
+      if (data.tokens?.accessToken) {
+        navigate(isWorker ? '/worker/profile' : '/', { replace: true });
+      } else {
+        navigate('/login', { replace: true });
+      }
     } catch (error) {
-      setFormError(error.message || 'No se pudo crear la cuenta.');
+      const loginLeak = /correo o contraseña incorrectos/i.test(error.message || '');
+      setFormError(
+        loginLeak
+          ? 'La cuenta se creó, pero no se pudo iniciar sesión automáticamente. Entra con tu correo y contraseña.'
+          : error.message || 'No se pudo crear la cuenta.',
+      );
     } finally {
       setLoading(false);
     }

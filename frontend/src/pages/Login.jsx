@@ -113,7 +113,7 @@ export default function Login() {
             <CheckCircleIcon />
           </span>
           <div className={styles.toastCopy}>
-            <p className={styles.toastTitle}>Tu cuenta ya está creada</p>
+            <p className={styles.toastTitle}>Cuenta creada exitosamente.</p>
             <p className={styles.toastText}>
               Registramos tu usuario correctamente. Inicia sesión
               {toast.correo ? (
