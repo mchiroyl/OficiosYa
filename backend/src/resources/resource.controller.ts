@@ -2,6 +2,7 @@ import {
   Body,
   Controller,
   Delete,
+  ForbiddenException,
   Get,
   Param,
   Patch,
@@ -43,6 +44,7 @@ export function createResourceController(config: ResourceConfig): Type<unknown> 
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: `Crear un registro en ${config.path}` })
     create(@Body() body: Record<string, unknown>) {
+      assertWritable(config);
       return this.resources.create(config, body);
     }
 
@@ -55,6 +57,7 @@ export function createResourceController(config: ResourceConfig): Type<unknown> 
       @Param('idPerfil') idPerfil?: string,
       @Param('idZona') idZona?: string,
     ) {
+      assertWritable(config);
       return this.resources.update(
         config,
         keysFromParams(config, { id, idPerfil, idZona }),
@@ -70,6 +73,7 @@ export function createResourceController(config: ResourceConfig): Type<unknown> 
       @Param('idPerfil') idPerfil?: string,
       @Param('idZona') idZona?: string,
     ) {
+      assertWritable(config);
       return this.resources.remove(config, keysFromParams(config, { id, idPerfil, idZona }));
     }
   }
@@ -79,6 +83,19 @@ export function createResourceController(config: ResourceConfig): Type<unknown> 
   });
 
   return ResourceController;
+}
+
+function assertWritable(config: ResourceConfig) {
+  if (!config.denyMutations) return;
+  if (config.table === 'solicitud_servicio') {
+    throw new ForbiddenException(
+      'El estado de una solicitud solo cambia con PUT /api/requests/{id}/status.',
+    );
+  }
+  if (config.table === 'resena') {
+    throw new ForbiddenException('Las reseñas se crean con POST /api/reviews/create.');
+  }
+  throw new ForbiddenException('Este recurso no admite altas, cambios ni bajas por esta vía.');
 }
 
 function keysFromParams(

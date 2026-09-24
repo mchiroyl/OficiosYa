@@ -31,12 +31,32 @@ const TRANSICIONES: Record<string, Partial<Record<AccionSolicitud, Transicion>>>
   },
 };
 
+/** Valores que acepta el CHECK actual de Supabase, en orden de preferencia HU → schema. */
+export const ESTADO_DB_ALIASES: Record<EstadoSolicitud, readonly string[]> = {
+  Enviada: ['Enviada', 'PENDIENTE'],
+  Aceptada: ['Aceptada', 'ACEPTADA', 'EN_PROCESO'],
+  Rechazada: ['Rechazada', 'RECHAZADA'],
+  Cancelada: ['Cancelada', 'CANCELADA'],
+  Finalizada: ['Finalizada', 'FINALIZADA', 'COMPLETADA'],
+};
+
 export function normalizeEstado(value?: string | null): EstadoSolicitud {
-  if (!value || value === 'PENDIENTE') return 'Enviada';
-  if ((ESTADOS_SOLICITUD as readonly string[]).includes(value)) {
-    return value as EstadoSolicitud;
+  const actual = (value || '').trim();
+  if (!actual || /^(enviada|pendiente)$/i.test(actual)) return 'Enviada';
+  if (/^(aceptada|en_proceso)$/i.test(actual)) return 'Aceptada';
+  if (/^rechazada$/i.test(actual)) return 'Rechazada';
+  if (/^cancelada$/i.test(actual)) return 'Cancelada';
+  if (/^(finalizada|completada)$/i.test(actual)) return 'Finalizada';
+  if ((ESTADOS_SOLICITUD as readonly string[]).includes(actual)) {
+    return actual as EstadoSolicitud;
   }
   return 'Enviada';
+}
+
+export function writeCandidates(estado: EstadoSolicitud): string[] {
+  const aliases = [...ESTADO_DB_ALIASES[estado]];
+  if (estado === 'Rechazada') aliases.push('CANCELADA');
+  return aliases;
 }
 
 export function resolveTransition(estadoActual: string, accion: AccionSolicitud) {

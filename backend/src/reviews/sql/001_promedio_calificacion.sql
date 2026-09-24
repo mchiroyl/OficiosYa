@@ -10,6 +10,21 @@ ALTER TABLE perfil_trabajador
 CREATE UNIQUE INDEX IF NOT EXISTS idx_resena_id_solicitud
   ON resena (id_solicitud);
 
+DO $$
+BEGIN
+  IF NOT EXISTS (
+    SELECT 1
+    FROM pg_constraint
+    WHERE conname = 'chk_resena_calificacion'
+      AND conrelid = 'resena'::regclass
+  ) THEN
+    ALTER TABLE resena
+      ADD CONSTRAINT chk_resena_calificacion
+      CHECK (calificacion BETWEEN 1 AND 5);
+  END IF;
+END
+$$;
+
 CREATE OR REPLACE FUNCTION actualizar_promedio_trabajador()
 RETURNS trigger
 LANGUAGE plpgsql

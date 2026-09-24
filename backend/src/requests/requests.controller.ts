@@ -1,5 +1,5 @@
 import { Body, Controller, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { UsuarioRow } from '../common/usuario.util';
@@ -30,6 +30,9 @@ export class RequestsController {
     description:
       'Máquina de estados transaccional. Aceptar/Rechazar: trabajador sobre Enviada. Cancelar: cliente sobre Enviada o Aceptada. Finalizar: cliente o trabajador sobre Aceptada. Impide saltos inválidos y condiciones de carrera.',
   })
+  @ApiResponse({ status: 400, description: 'Salto de estado inválido.' })
+  @ApiResponse({ status: 403, description: 'El actor no puede ejecutar esa acción.' })
+  @ApiResponse({ status: 409, description: 'La solicitud cambió de estado en paralelo.' })
   updateStatus(
     @CurrentUser() user: UsuarioRow,
     @Param('id', ParseIntPipe) id: number,

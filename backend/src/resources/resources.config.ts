@@ -4,6 +4,7 @@ export type ResourceConfig = {
   pk: string | string[];
   publicRead?: boolean;
   hiddenFields?: string[];
+  denyMutations?: boolean;
 };
 
 export const RESOURCES: ResourceConfig[] = [
@@ -21,8 +22,8 @@ export const RESOURCES: ResourceConfig[] = [
   { path: 'bitacora', table: 'bitacora', pk: 'id_evento' },
   { path: 'categorias', table: 'categoria', pk: 'id_categoria', publicRead: true },
   { path: 'servicios', table: 'servicio_ofrecido', pk: 'id_servicio', publicRead: true },
-  { path: 'solicitudes', table: 'solicitud_servicio', pk: 'id_solicitud' },
+  { path: 'solicitudes', table: 'solicitud_servicio', pk: 'id_solicitud', denyMutations: true },
   { path: 'cotizaciones', table: 'cotizacion_privada', pk: 'id_cotizacion' },
   { path: 'mensajes', table: 'mensaje', pk: 'id_mensaje' },
-  { path: 'resenas', table: 'resena', pk: 'id_resena', publicRead: true },
+  { path: 'resenas', table: 'resena', pk: 'id_resena', publicRead: true, denyMutations: true },
 ];

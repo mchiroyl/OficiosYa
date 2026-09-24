@@ -1,4 +1,4 @@
-import { BadRequestException, Injectable, NotFoundException } from '@nestjs/common';
+import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ResourceConfig } from './resources.config';
 
@@ -44,6 +44,7 @@ export class ResourceService {
   }
 
   async create(config: ResourceConfig, body: Record<string, unknown>) {
+    this.assertWritable(config);
     const payload = this.stripHidden(config, body);
     const { data, error } = await this.supabase
       .from(config.table)
@@ -76,6 +77,7 @@ export class ResourceService {
     keys: Record<string, string | number>,
     body: Record<string, unknown>,
   ) {
+    this.assertWritable(config);
     await this.findOne(config, keys);
     const payload = this.stripHidden(config, body);
 
@@ -92,6 +94,7 @@ export class ResourceService {
   }
 
   async remove(config: ResourceConfig, keys: Record<string, string | number>) {
+    this.assertWritable(config);
     await this.findOne(config, keys);
 
     let builder = this.supabase.from(config.table).delete();
@@ -102,6 +105,19 @@ export class ResourceService {
     const { error } = await builder;
     if (error) throw new BadRequestException(error.message);
     return { message: 'Recurso eliminado.' };
+  }
+
+  private assertWritable(config: ResourceConfig) {
+    if (!config.denyMutations) return;
+    if (config.table === 'solicitud_servicio') {
+      throw new ForbiddenException(
+        'El estado de una solicitud solo cambia con PUT /api/requests/{id}/status.',
+      );
+    }
+    if (config.table === 'resena') {
+      throw new ForbiddenException('Las reseñas se crean con POST /api/reviews/create.');
+    }
+    throw new ForbiddenException('Este recurso no admite altas, cambios ni bajas por esta vía.');
   }
 
   private sanitize(config: ResourceConfig, data: unknown) {

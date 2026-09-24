@@ -8,6 +8,7 @@ import {
 import { UsuarioRow } from '../common/usuario.util';
 import { normalizeEstado } from '../requests/request-state';
 import { SupabaseService } from '../supabase/supabase.service';
+import { parseProfileExtras, serializeProfileExtras } from '../worker/worker-profile.codec';
 import { CreateReviewDto } from './dto/create-review.dto';
 
 type SolicitudRow = {
@@ -164,11 +165,35 @@ export class ReviewsService {
       })
       .eq('id_perfil', idPerfil);
 
-    if (updateError && !/column|schema cache|does not exist/i.test(updateError.message)) {
-      throw new BadRequestException(updateError.message);
+    if (updateError) {
+      if (!/column|schema cache|does not exist/i.test(updateError.message)) {
+        throw new BadRequestException(updateError.message);
+      }
+      await this.persistPromedioEnPerfil(idPerfil, reputacion, total);
     }
 
     return { reputacion, total_resenas: total };
+  }
+
+  private async persistPromedioEnPerfil(idPerfil: number, reputacion: number, totalResenas: number) {
+    const { data, error } = await this.supabase
+      .from('perfil_trabajador')
+      .select('id_perfil, descripcion')
+      .eq('id_perfil', idPerfil)
+      .maybeSingle();
+    if (error || !data) return;
+
+    const extras = parseProfileExtras(data.descripcion);
+    await this.supabase
+      .from('perfil_trabajador')
+      .update({
+        descripcion: serializeProfileExtras({
+          ...extras,
+          reputacion,
+          total_resenas: totalResenas,
+        }),
+      })
+      .eq('id_perfil', idPerfil);
   }
 
   private async nextId(table: 'resena' | 'bitacora', pk: 'id_resena' | 'id_evento') {

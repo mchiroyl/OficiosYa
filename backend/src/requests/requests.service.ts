@@ -12,7 +12,10 @@ import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
 import {
   actorPuede,
   ESTADO_SOLICITUD_INICIAL,
+  EstadoSolicitud,
+  normalizeEstado,
   resolveTransition,
+  writeCandidates,
 } from './request-state';
 
 type SolicitudRow = {
@@ -80,7 +83,7 @@ export class RequestsService {
       urgente: Boolean(dto.urgente),
     };
 
-    const saved = await this.insertSolicitud(payload);
+    const saved = await this.insertSolicitudWithEstado(payload);
     await this.registrarBitacora(cliente.id_usuario, 'CREATE_REQUEST', 'solicitud_servicio');
     return this.present(saved, perfil, servicio);
   }
@@ -115,6 +118,7 @@ export class RequestsService {
     const saved =
       (await this.updateStatusViaRpc(idSolicitud, usuario.id_usuario, dto.accion)) ||
       (await this.updateStatusLocked(solicitud, transicion.next));
+    saved.estado = transicion.next;
 
     const servicio = await this.findServicio(saved.id_servicio);
     await this.registrarBitacora(
@@ -140,6 +144,9 @@ export class RequestsService {
       if (/FORBIDDEN/i.test(error.message)) {
         throw new ForbiddenException('No puedes cambiar el estado de esta solicitud.');
       }
+      if (/INVALID_ACTION/i.test(error.message)) {
+        throw new BadRequestException('La acción debe ser Aceptar, Rechazar, Cancelar o Finalizar.');
+      }
       if (/NOT_FOUND/i.test(error.message)) {
         throw new NotFoundException('La solicitud no existe.');
       }
@@ -153,20 +160,52 @@ export class RequestsService {
     return data as SolicitudRow;
   }
 
-  private async updateStatusLocked(solicitud: SolicitudRow, next: string) {
-    const { data, error } = await this.supabase
-      .from('solicitud_servicio')
-      .update({ estado: next })
-      .eq('id_solicitud', solicitud.id_solicitud)
-      .eq('estado', solicitud.estado)
-      .select('*')
-      .maybeSingle();
+  private async updateStatusLocked(solicitud: SolicitudRow, next: EstadoSolicitud) {
+    let lastCheckError: string | undefined;
+    for (const estado of writeCandidates(next)) {
+      const { data, error } = await this.supabase
+        .from('solicitud_servicio')
+        .update({ estado })
+        .eq('id_solicitud', solicitud.id_solicitud)
+        .eq('estado', solicitud.estado)
+        .select('*')
+        .maybeSingle();
 
-    if (error) throw new BadRequestException(error.message);
-    if (!data) {
-      throw new ConflictException('La solicitud cambió de estado. Recarga e inténtalo de nuevo.');
+      if (error && this.isEstadoCheckError(error.message)) {
+        lastCheckError = error.message;
+        continue;
+      }
+      if (error) throw new BadRequestException(error.message);
+      if (!data) {
+        throw new ConflictException('La solicitud cambió de estado. Recarga e inténtalo de nuevo.');
+      }
+      return data as SolicitudRow;
     }
-    return data as SolicitudRow;
+    throw new BadRequestException(
+      lastCheckError || 'El estado de la solicitud no es compatible con la base de datos.',
+    );
+  }
+
+  private async insertSolicitudWithEstado(payload: Record<string, unknown>) {
+    let lastCheckError: string | undefined;
+    for (const estado of writeCandidates('Enviada')) {
+      try {
+        return await this.insertSolicitud({ ...payload, estado });
+      } catch (error) {
+        if (error instanceof BadRequestException && this.isEstadoCheckError(error.message)) {
+          lastCheckError = error.message;
+          continue;
+        }
+        throw error;
+      }
+    }
+    throw new BadRequestException(
+      lastCheckError || 'No se pudo crear la solicitud con un estado inicial válido.',
+    );
+  }
+
+  private isEstadoCheckError(message?: string) {
+    return /chk_solicitud_estado|check constraint/i.test(message || '');
   }
 
   private present(row: SolicitudRow, perfil: PerfilRow, servicio: ServicioRow | null) {
@@ -178,7 +217,7 @@ export class RequestsService {
       descripcion: row.descripcion,
       ubicacion_aprox: row.ubicacion_aprox,
       fecha_deseada: row.fecha_deseada,
-      estado: row.estado,
+      estado: normalizeEstado(row.estado),
       urgente: row.urgente,
       trabajador: {
         id_perfil: perfil.id_perfil,

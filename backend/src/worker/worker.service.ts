@@ -72,6 +72,8 @@ export class WorkerService {
         bio: nextBio,
         tarifas: nextTarifas,
         horarios: nextHorarios,
+        reputacion: extras.reputacion,
+        total_resenas: extras.total_resenas,
       }),
       experiencia: dto.experiencia !== undefined ? dto.experiencia : existing?.experiencia || null,
       disponibilidad: normalizeDisponibilidad(existing?.disponibilidad),
@@ -139,6 +141,14 @@ export class WorkerService {
       return {
         reputacion: Number(perfil.reputacion_promedio) || 0,
         total_resenas: Number(perfil.total_resenas) || 0,
+      };
+    }
+
+    const extras = parseProfileExtras(perfil.descripcion);
+    if (extras.reputacion != null && extras.total_resenas != null) {
+      return {
+        reputacion: extras.reputacion,
+        total_resenas: extras.total_resenas,
       };
     }
 

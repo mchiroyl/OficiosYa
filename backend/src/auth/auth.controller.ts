@@ -30,13 +30,21 @@ export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
   @Post('auth/register')
-  @ApiOperation({ summary: 'Crear un usuario nuevo' })
+  @ApiOperation({
+    summary: 'Crear un usuario nuevo',
+    description:
+      'Registra la cuenta, guarda password_hash con bcrypt (costo 12) y devuelve un JWT de acceso y un refresh token.',
+  })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
   }
 
   @Post('auth/login')
-  @ApiOperation({ summary: 'Iniciar sesión y obtener tokens' })
+  @ApiOperation({
+    summary: 'Iniciar sesión y obtener tokens',
+    description:
+      'Valida correo y contraseña con bcrypt, emite JWT (access + refresh) y rechaza cuentas no operables.',
+  })
   login(@Body() dto: LoginDto) {
     return this.authService.login(dto);
   }
