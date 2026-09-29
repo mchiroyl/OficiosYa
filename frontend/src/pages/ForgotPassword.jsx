@@ -16,6 +16,15 @@ function validateEmail(value) {
   return '';
 }
 
+function localRecoveryPath(enlace) {
+  try {
+    const parsed = new URL(enlace, window.location.origin);
+    return `${parsed.pathname}${parsed.search}`;
+  } catch {
+    return '/reset-password';
+  }
+}
+
 export default function ForgotPassword() {
   const { forgotPassword } = useAuth();
   const [email, setEmail] = useState('');
@@ -23,6 +32,7 @@ export default function ForgotPassword() {
   const [touched, setTouched] = useState(false);
   const [loading, setLoading] = useState(false);
   const [success, setSuccess] = useState('');
+  const [simulation, setSimulation] = useState(null);
 
   const handleSubmit = async (e) => {
     e.preventDefault();
@@ -30,6 +40,7 @@ export default function ForgotPassword() {
     setTouched(true);
     setError(emailError);
     setSuccess('');
+    setSimulation(null);
     if (emailError) return;
 
     setLoading(true);
@@ -39,6 +50,9 @@ export default function ForgotPassword() {
         data.message ||
           'Si el correo está registrado, te enviaremos instrucciones para restablecer la contraseña.',
       );
+      if (data.envio?.codigo || data.envio?.enlace) {
+        setSimulation(data.envio);
+      }
     } catch (err) {
       setError(err.message || 'No se pudo enviar el correo de recuperación.');
     } finally {
@@ -63,6 +77,20 @@ export default function ForgotPassword() {
           <p className={authStyles.formSuccess} role="status">
             {success}
           </p>
+        )}
+        {simulation?.codigo && (
+          <div className={authStyles.simulation} role="status">
+            <p className={authStyles.simulationTitle}>Simulación de envío (HU-03)</p>
+            <p>No se envió un correo real. Usa este código temporal o el enlace.</p>
+            <p>
+              Código: <strong>{simulation.codigo}</strong>
+            </p>
+            {simulation.enlace && (
+              <Link to={localRecoveryPath(simulation.enlace)} className={authStyles.footerLink}>
+                Abrir enlace de restablecimiento
+              </Link>
+            )}
+          </div>
         )}
 
         <Input

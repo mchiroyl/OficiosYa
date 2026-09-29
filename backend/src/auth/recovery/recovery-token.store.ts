@@ -1,5 +1,8 @@
 import { Injectable } from '@nestjs/common';
-import { createHash, randomBytes, randomInt, timingSafeEqual } from 'crypto';
+import { ConfigService } from '@nestjs/config';
+import { createHash, createHmac, randomBytes, randomInt, timingSafeEqual } from 'crypto';
+
+const MAX_CODE_ATTEMPTS = 5;
 
 export type RecoveryChallenge = {
   idUsuario: number;
@@ -8,6 +11,7 @@ export type RecoveryChallenge = {
   codeHash: string;
   expiresAt: number;
   used: boolean;
+  attempts: number;
 };
 
 export type IssuedRecovery = {
@@ -21,8 +25,10 @@ export type IssuedRecovery = {
 export class RecoveryTokenStore {
   private readonly challenges = new Map<string, RecoveryChallenge>();
 
+  constructor(private readonly config: ConfigService) {}
+
   issue(idUsuario: number, correo: string, ttlMinutes: number): IssuedRecovery {
-    const token = randomBytes(32).toString('hex');
+    const token = randomBytes(32).toString('base64url');
     const codigo = String(randomInt(100000, 1000000));
     const expiresAt = Date.now() + ttlMinutes * 60 * 1000;
     const key = this.normalize(correo);
@@ -30,10 +36,11 @@ export class RecoveryTokenStore {
     this.challenges.set(key, {
       idUsuario,
       correo: key,
-      tokenHash: this.hash(token),
-      codeHash: this.hash(codigo),
+      tokenHash: this.digest(token),
+      codeHash: this.digest(codigo),
       expiresAt,
       used: false,
+      attempts: 0,
     });
 
     return {
@@ -45,13 +52,22 @@ export class RecoveryTokenStore {
   }
 
   consumeByToken(token: string): RecoveryChallenge | null {
-    return this.consume((challenge) => this.safeEqual(challenge.tokenHash, this.hash(token)));
+    const tokenHash = this.digest((token || '').trim());
+    return this.consume((challenge) => this.safeEqual(challenge.tokenHash, tokenHash));
   }
 
   consumeByCode(correo: string, codigo: string): RecoveryChallenge | null {
     const challenge = this.challenges.get(this.normalize(correo));
     if (!this.isUsable(challenge)) return null;
-    if (!this.safeEqual(challenge.codeHash, this.hash(codigo))) return null;
+
+    if (!this.safeEqual(challenge.codeHash, this.digest((codigo || '').trim()))) {
+      challenge.attempts += 1;
+      if (challenge.attempts >= MAX_CODE_ATTEMPTS) {
+        this.challenges.delete(challenge.correo);
+      }
+      return null;
+    }
+
     challenge.used = true;
     this.challenges.delete(challenge.correo);
     return challenge;
@@ -76,7 +92,11 @@ export class RecoveryTokenStore {
     return true;
   }
 
-  private hash(value: string) {
+  private digest(value: string) {
+    const secret = this.config.get<string>('RESET_TOKEN_SECRET');
+    if (secret) {
+      return createHmac('sha256', secret).update(value).digest('hex');
+    }
     return createHash('sha256').update(value).digest('hex');
   }
 

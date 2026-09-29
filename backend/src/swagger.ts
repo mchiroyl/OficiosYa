@@ -5,7 +5,7 @@ export function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('OficiosYa API')
     .setDescription(
-      'Documentación REST de OficiosYa: autenticación, recuperación de acceso y recursos del modelo de datos.',
+      'Documentación REST de OficiosYa: autenticación, perfil y disponibilidad del trabajador (IDC-21, HU-05, HU-07), portafolio, búsqueda, solicitudes y reseñas.',
     )
     .setVersion('1.0')
     .addBearerAuth(
@@ -17,7 +17,7 @@ export function setupSwagger(app: INestApplication) {
       },
       'access-token',
     )
-    .addTag('Auth', 'Registro, login, sesión y recuperación de contraseña')
+    .addTag('Auth', 'Registro, login, sesión y recuperación de contraseña (HU-03)')
     .addTag('Worker', 'Perfil del trabajador, tarifas, horarios, cobertura y disponibilidad')
     .addTag('Portfolio', 'Fotos de trabajos: carga, compresión y URLs para lazy loading')
     .addTag('Search', 'Búsqueda geográfica (HU-12) y motor indexado de perfiles (HU-10, HU-11)')

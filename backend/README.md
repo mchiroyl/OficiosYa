@@ -12,8 +12,11 @@ npm run dev
 
 - API: http://localhost:3000/api
 - Swagger: http://localhost:3000/api/docs
+- Spec API / Swagger (HU-03, IDC-21): [docs/03_Arquitectura_y_Base_de_Datos/04_Especificacion_Tecnica_API_REST_Swagger.docx](docs/03_Arquitectura_y_Base_de_Datos/04_Especificacion_Tecnica_API_REST_Swagger.docx)
 - Modelo de datos: [docs/05_Modelo_Datos_Inicial.md](docs/05_Modelo_Datos_Inicial.md)
 - ERD conceptual y físico: [docs/01_Diagrama_Entidad_Relacion_ERD_Conceptual_y_Fisico.png](docs/01_Diagrama_Entidad_Relacion_ERD_Conceptual_y_Fisico.png) / [PDF](docs/01_Diagrama_Entidad_Relacion_ERD_Conceptual_y_Fisico.pdf)
+
+Recuperación de acceso (HU-03): `POST /api/auth/forgot-password` emite un token temporal (32 bytes, un solo uso) y un código de 6 dígitos, y **simula** el envío en la consola del API. `POST /api/auth/reset-password` consume el token o el código. TTL: `RESET_TOKEN_TTL_MINUTES` (15). En local, `RECOVERY_SIMULATION_EXPOSE=true` incluye código y enlace en la respuesta para probar sin SMTP.
 
 Índices de búsqueda (HU-10/HU-11): ejecuta `src/search/sql/001_motor_busqueda_indexada.sql` en el SQL Editor de Supabase para activar el motor SQL (`GET /api/search/profiles`). Sin eso, el endpoint usa un respaldo con las mismas variables.
 

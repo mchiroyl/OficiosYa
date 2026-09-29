@@ -3,7 +3,7 @@ import BackLink from '../components/BackLink';
 import Button from '../components/ui/Button';
 import Checkbox from '../components/ui/Checkbox';
 import { useAuth } from '../auth/AuthContext';
-import { getWorkerProfile, listZonas, updateWorkerProfile } from '../api/worker';
+import { getWorkerProfile, listZonas, updateWorkerAvailability, updateWorkerProfile } from '../api/worker';
 import styles from './WorkerProfile.module.css';
 
 const TIPOS_TARIFA = [
@@ -11,6 +11,18 @@ const TIPOS_TARIFA = [
   { value: 'por_servicio', label: 'Por servicio' },
   { value: 'a_convenir', label: 'A convenir' },
 ];
+
+const DIAS = [
+  { value: 'lunes', label: 'Lunes' },
+  { value: 'martes', label: 'Martes' },
+  { value: 'miercoles', label: 'Miércoles' },
+  { value: 'jueves', label: 'Jueves' },
+  { value: 'viernes', label: 'Viernes' },
+  { value: 'sabado', label: 'Sábado' },
+  { value: 'domingo', label: 'Domingo' },
+];
+
+const EMPTY_HORARIO = { dia: 'lunes', desde: '08:00', hasta: '17:00' };
 
 const EMPTY_TARIFAS = {
   tipo: 'por_hora',
@@ -26,6 +38,10 @@ function parseNumber(value) {
   return Number.isFinite(parsed) ? parsed : undefined;
 }
 
+function toHHmm(value) {
+  return String(value || '').slice(0, 5);
+}
+
 export default function WorkerProfile() {
   const { session } = useAuth();
   const token = session?.accessToken;
@@ -37,6 +53,9 @@ export default function WorkerProfile() {
   const [zonas, setZonas] = useState([]);
   const [cobertura, setCobertura] = useState([]);
   const [tarifas, setTarifas] = useState(EMPTY_TARIFAS);
+  const [horarios, setHorarios] = useState([]);
+  const [disponibilidad, setDisponibilidad] = useState('Disponible');
+  const [toggling, setToggling] = useState(false);
 
   const showMontos = tarifas.tipo !== 'a_convenir';
 
@@ -66,6 +85,14 @@ export default function WorkerProfile() {
           notas: current.notas || '',
         });
         setCobertura((profile.cobertura || []).map((zona) => zona.id_zona));
+        setHorarios(
+          (profile.horarios || []).map((slot) => ({
+            dia: slot.dia || 'lunes',
+            desde: slot.desde || '08:00',
+            hasta: slot.hasta || '17:00',
+          })),
+        );
+        setDisponibilidad(profile.disponibilidad === 'Ocupado' ? 'Ocupado' : 'Disponible');
 
         try {
           const raw = sessionStorage.getItem('oficiosya.registerSuccess');
@@ -107,6 +134,26 @@ export default function WorkerProfile() {
     );
   };
 
+  const handleAvailability = async () => {
+    setError('');
+    setSuccess('');
+    setToggling(true);
+    try {
+      const next = disponibilidad === 'Disponible' ? 'Ocupado' : 'Disponible';
+      const profile = await updateWorkerAvailability({ disponibilidad: next }, token);
+      setDisponibilidad(profile.disponibilidad === 'Ocupado' ? 'Ocupado' : 'Disponible');
+      setSuccess(
+        profile.disponibilidad === 'Ocupado'
+          ? 'Ahora figuras como Ocupado.'
+          : 'Ahora figuras como Disponible.',
+      );
+    } catch (err) {
+      setError(err.message || 'No se pudo cambiar la disponibilidad.');
+    } finally {
+      setToggling(false);
+    }
+  };
+
   const handleSubmit = async (e) => {
     e.preventDefault();
     setError('');
@@ -121,6 +168,12 @@ export default function WorkerProfile() {
       }
     }
 
+    const horarioInvalido = horarios.find((slot) => toHHmm(slot.hasta) <= toHHmm(slot.desde));
+    if (horarioInvalido) {
+      setError(`El horario de ${horarioInvalido.dia} debe terminar después de iniciar.`);
+      return;
+    }
+
     setSaving(true);
     try {
       const payload = {
@@ -129,6 +182,11 @@ export default function WorkerProfile() {
           moneda: tarifas.moneda || 'GTQ',
           notas: tarifas.notas.trim() || undefined,
         },
+        horarios: horarios.map((slot) => ({
+          dia: slot.dia,
+          desde: toHHmm(slot.desde),
+          hasta: toHHmm(slot.hasta),
+        })),
         cobertura,
       };
 
@@ -162,9 +220,9 @@ export default function WorkerProfile() {
       <div className={styles.inner}>
         <BackLink to="/">Volver al menú principal</BackLink>
         <header className={styles.header}>
-          <h1 className={styles.title}>Tarifas y cobertura</h1>
+          <h1 className={styles.title}>Perfil y disponibilidad</h1>
           <p className={styles.subtitle}>
-            Configura tus tarifas y las zonas donde ofreces tus servicios.
+            Configura tarifas, horarios, cobertura y el estado público Disponible/Ocupado.
           </p>
         </header>
 
@@ -180,6 +238,29 @@ export default function WorkerProfile() {
                 {success}
               </p>
             )}
+
+            <section>
+              <h2 className={styles.sectionTitle}>Disponibilidad pública</h2>
+              <p className={styles.message}>
+                Estado actual:{' '}
+                <span
+                  className={
+                    disponibilidad === 'Disponible' ? styles.available : styles.occupied
+                  }
+                >
+                  {disponibilidad}
+                </span>
+              </p>
+              <Button
+                type="button"
+                variant="outline"
+                loading={toggling}
+                disabled={toggling || saving}
+                onClick={handleAvailability}
+              >
+                {disponibilidad === 'Disponible' ? 'Marcar como Ocupado' : 'Marcar como Disponible'}
+              </Button>
+            </section>
 
             <section>
               <h2 className={styles.sectionTitle}>Tarifas</h2>
@@ -274,6 +355,86 @@ export default function WorkerProfile() {
                 rows={2}
               />
             </div>
+
+            <section>
+              <h2 className={styles.sectionTitle}>Horarios</h2>
+              <p className={styles.hint}>Indica los turnos en los que atiendes solicitudes.</p>
+              {horarios.length === 0 ? (
+                <p className={styles.message}>Aún no hay horarios. Agrega al menos uno si quieres publicarlos.</p>
+              ) : (
+                <div className={styles.slots}>
+                  {horarios.map((slot, index) => (
+                    <div key={`${slot.dia}-${index}`} className={styles.slot}>
+                      <select
+                        aria-label={`Día ${index + 1}`}
+                        className={styles.select}
+                        value={slot.dia}
+                        disabled={saving}
+                        onChange={(e) =>
+                          setHorarios((prev) =>
+                            prev.map((item, i) =>
+                              i === index ? { ...item, dia: e.target.value } : item,
+                            ),
+                          )
+                        }
+                      >
+                        {DIAS.map((dia) => (
+                          <option key={dia.value} value={dia.value}>
+                            {dia.label}
+                          </option>
+                        ))}
+                      </select>
+                      <input
+                        type="time"
+                        aria-label={`Desde ${index + 1}`}
+                        className={styles.input}
+                        value={slot.desde}
+                        disabled={saving}
+                        onChange={(e) =>
+                          setHorarios((prev) =>
+                            prev.map((item, i) =>
+                              i === index ? { ...item, desde: e.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                      <input
+                        type="time"
+                        aria-label={`Hasta ${index + 1}`}
+                        className={styles.input}
+                        value={slot.hasta}
+                        disabled={saving}
+                        onChange={(e) =>
+                          setHorarios((prev) =>
+                            prev.map((item, i) =>
+                              i === index ? { ...item, hasta: e.target.value } : item,
+                            ),
+                          )
+                        }
+                      />
+                      <button
+                        type="button"
+                        className={styles.removeSlot}
+                        disabled={saving}
+                        onClick={() =>
+                          setHorarios((prev) => prev.filter((_, i) => i !== index))
+                        }
+                      >
+                        Quitar
+                      </button>
+                    </div>
+                  ))}
+                </div>
+              )}
+              <Button
+                type="button"
+                variant="outline"
+                disabled={saving || horarios.length >= 14}
+                onClick={() => setHorarios((prev) => [...prev, { ...EMPTY_HORARIO }])}
+              >
+                Agregar horario
+              </Button>
+            </section>
 
             <section>
               <h2 className={styles.sectionTitle}>Zonas de cobertura</h2>

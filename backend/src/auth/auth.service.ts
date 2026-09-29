@@ -158,13 +158,20 @@ export class AuthService {
     const correo = dto.correo.toLowerCase();
     const usuario = await this.findUsuarioByCorreo(correo);
 
+    const ttlMinutes = Number(this.config.get('RESET_TOKEN_TTL_MINUTES') || 15);
+    const envioBase = {
+      canal: 'simulacion' as const,
+      asunto: 'Restablece tu contraseña — OficiosYa',
+      destinatario: correo,
+      nota: 'No se despachó un correo real. El código y el enlace se registran en la consola del API.',
+    };
+
     if (usuario && assertCuentaOperable(usuario) === null) {
-      const ttlMinutes = Number(this.config.get('RESET_TOKEN_TTL_MINUTES') || 15);
       const issued = this.recoveryTokens.issue(usuario.id_usuario, correo, ttlMinutes);
       const frontendUrl = this.config.get<string>('FRONTEND_URL') || 'http://localhost:5173';
-      const enlace = `${frontendUrl}/reset-password?token=${issued.token}`;
+      const enlace = `${frontendUrl}/reset-password?token=${encodeURIComponent(issued.token)}`;
 
-      this.mailSimulator.enviarRecuperacion({
+      const dispatch = this.mailSimulator.enviarRecuperacion({
         correo,
         codigo: issued.codigo,
         enlace,
@@ -173,13 +180,33 @@ export class AuthService {
       });
 
       await this.registrarBitacora(usuario.id_usuario, 'FORGOT_PASSWORD', 'usuario');
+
+      return {
+        message: MENSAJE_RECUPERACION,
+        expiresInMinutes: ttlMinutes,
+        envio: this.shouldExposeSimulation()
+          ? {
+              ...envioBase,
+              codigo: dispatch.codigo,
+              enlace: dispatch.enlace,
+              vence: dispatch.vence,
+            }
+          : envioBase,
+      };
     }
 
     return {
       message: MENSAJE_RECUPERACION,
-      expiresInMinutes: Number(this.config.get('RESET_TOKEN_TTL_MINUTES') || 15),
-      envio: 'simulado',
+      expiresInMinutes: ttlMinutes,
+      envio: envioBase,
     };
+  }
+
+  private shouldExposeSimulation() {
+    const raw = String(this.config.get('RECOVERY_SIMULATION_EXPOSE') ?? '').toLowerCase();
+    if (raw === 'false' || raw === '0') return false;
+    if (raw === 'true' || raw === '1') return true;
+    return this.config.get('NODE_ENV') !== 'production';
   }
 
   async resetPassword(dto: ResetPasswordDto) {

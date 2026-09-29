@@ -12,6 +12,14 @@ export function updateWorkerProfile(payload, token) {
   });
 }
 
+export function updateWorkerAvailability(payload, token) {
+  return api('/worker/availability', {
+    method: 'PUT',
+    body: payload || {},
+    token,
+  });
+}
+
 export function listZonas() {
   return api('/zonas');
 }

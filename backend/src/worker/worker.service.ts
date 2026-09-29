@@ -101,13 +101,19 @@ export class WorkerService {
   }
 
   async updateAvailability(usuario: UsuarioRow, dto: UpdateAvailabilityDto = {}) {
-    const perfil = await this.findPerfil(usuario.id_usuario);
+    let perfil = await this.findPerfil(usuario.id_usuario);
     if (!perfil) {
-      throw new NotFoundException('Aún no tienes un perfil de trabajador.');
+      await this.updateProfile(usuario, {});
+      perfil = await this.findPerfil(usuario.id_usuario);
+      if (!perfil) {
+        throw new NotFoundException('No se pudo crear el perfil de trabajador.');
+      }
     }
 
     const next = dto?.disponibilidad || toggleDisponibilidad(perfil.disponibilidad);
-    const saved = await this.updatePerfil(perfil.id_perfil, { disponibilidad: next });
+    const saved = await this.updatePerfil(perfil.id_perfil, {
+      disponibilidad: normalizeDisponibilidad(next),
+    });
     await this.registrarBitacora(usuario.id_usuario, 'TOGGLE_AVAILABILITY', 'perfil_trabajador');
     return this.present(saved);
   }

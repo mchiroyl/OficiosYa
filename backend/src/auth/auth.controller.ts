@@ -4,13 +4,25 @@ import {
   Delete,
   Get,
   Headers,
+  HttpCode,
+  HttpStatus,
   Param,
   ParseIntPipe,
   Patch,
   Post,
   UseGuards,
 } from '@nestjs/common';
-import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import {
+  ApiBadRequestResponse,
+  ApiBearerAuth,
+  ApiBody,
+  ApiOkResponse,
+  ApiOperation,
+  ApiTags,
+  ApiUnauthorizedResponse,
+} from '@nestjs/swagger';
+import { ForgotPasswordResponseDto } from './dto/forgot-password-response.dto';
+import { ResetPasswordResponseDto } from './dto/reset-password-response.dto';
 import { UsuarioRow } from '../common/usuario.util';
 import { AuthService } from './auth.service';
 import { CurrentUser } from './current-user.decorator';
@@ -73,13 +85,29 @@ export class AuthController {
   }
 
   @Post('auth/forgot-password')
-  @ApiOperation({ summary: 'Solicitar recuperación de acceso (HU-03)' })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Solicitar recuperación de acceso (HU-03)',
+    description:
+      'Genera un token temporal de 32 bytes (base64url, un solo uso, TTL configurable) y un código de 6 dígitos. Simula el envío del correo (consola del API). La respuesta pública es la misma si el correo no existe.',
+  })
+  @ApiBody({ type: ForgotPasswordDto })
+  @ApiOkResponse({ type: ForgotPasswordResponseDto })
   forgotPassword(@Body() dto: ForgotPasswordDto) {
     return this.authService.forgotPassword(dto);
   }
 
   @Post('auth/reset-password')
-  @ApiOperation({ summary: 'Restablecer contraseña con token o código' })
+  @HttpCode(HttpStatus.OK)
+  @ApiOperation({
+    summary: 'Restablecer contraseña con token o código (HU-03)',
+    description:
+      'Acepta el token del enlace, o el par correo + código de 6 dígitos. El desafío se consume (un solo uso). Actualiza password_hash con bcrypt (costo 12) y la cuenta de Auth.',
+  })
+  @ApiBody({ type: ResetPasswordDto })
+  @ApiOkResponse({ type: ResetPasswordResponseDto })
+  @ApiUnauthorizedResponse({ description: 'Código o enlace inválido o expirado.' })
+  @ApiBadRequestResponse({ description: 'Falta token o código, o la clave no cumple el mínimo.' })
   resetPassword(@Body() dto: ResetPasswordDto) {
     return this.authService.resetPassword(dto);
   }

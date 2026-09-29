@@ -2,6 +2,18 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 
 const RouterContext = createContext(null);
 
+function splitLocation(to) {
+  try {
+    const url = new URL(to, window.location.origin);
+    return {
+      pathname: url.pathname,
+      href: `${url.pathname}${url.search}${url.hash}`,
+    };
+  } catch {
+    return { pathname: to, href: to };
+  }
+}
+
 export function Router({ children }) {
   const [path, setPath] = useState(() => window.location.pathname);
 
@@ -12,13 +24,15 @@ export function Router({ children }) {
   }, []);
 
   const navigate = useCallback((to, options = {}) => {
-    if (to === window.location.pathname) return;
+    const { pathname, href } = splitLocation(to);
+    const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
+    if (href === current) return;
     if (options.replace) {
-      window.history.replaceState({}, '', to);
+      window.history.replaceState({}, '', href);
     } else {
-      window.history.pushState({}, '', to);
+      window.history.pushState({}, '', href);
     }
-    setPath(to);
+    setPath(pathname);
   }, []);
 
   return (
