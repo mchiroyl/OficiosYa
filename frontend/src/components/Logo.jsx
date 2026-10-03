@@ -9,11 +9,12 @@ export default function Logo({ variant = 'default' }) {
     .join(' ');
 
   return (
-    <div className={className} aria-label="Logo del proyecto" role="img">
+    <div className={className} aria-label="OficiosYA" role="img">
       <div className={styles.mark}>
         <span className={styles.dot} />
         <span className={styles.bar} />
       </div>
+      {variant !== 'compact' && <span className={styles.wordmark}>Oficios<span>YA</span></span>}
     </div>
   );
 }

@@ -42,3 +42,15 @@
 .footer { text-align: center; padding: 24px; color: #526b67; border-top: 1px solid #dbe7e5; font-size: 12px; }
 @media (max-width: 960px) { .layout { grid-template-columns: 255px minmax(0, 1fr); gap: 20px; } .cards { grid-template-columns: 1fr; } }
 @media (max-width: 680px) { .header { padding: 14px 18px; flex-wrap: wrap; gap: 12px; } .brand { font-size: 21px; } .nav { width: 100%; justify-content: space-between; gap: 12px; } .main { padding: 20px 16px 40px; } .hero { padding: 24px 20px; } .hero h1 { font-size: 30px; } .searchIcon { display: none; } .searchBar input { font-size: 13px; } .searchBar button { padding: 10px 13px; } .layout { grid-template-columns: 1fr; } .resultsHeading h2 { font-size: 20px; } }
+
+/* Sistema visual definido en el acta UI/UX. */
+.page { background: var(--color-bg); color: var(--color-text); }
+.header { border-color: var(--color-border); }
+.hero { padding: 48px 40px; text-align: center; background: var(--color-bg-light); border-color: var(--color-accent-light); border-radius: 24px; }
+.hero > p:not(.eyebrow) { color: var(--color-text-secondary); }
+.searchBar { margin: 24px auto 0; border-color: var(--color-secondary); border-radius: var(--radius-pill); box-shadow: var(--shadow-card); }
+.searchBar input:focus { outline: none; }
+.card { position: relative; border-color: var(--color-border); border-radius: var(--radius-lg); box-shadow: var(--shadow-card); }
+
+@media (max-width: 900px) { .categoryList { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 520px) { .hero { padding: 34px 18px; } .categoryList { grid-template-columns: repeat(2, 1fr); } .sectionHeading { align-items: start; flex-direction: column; } }

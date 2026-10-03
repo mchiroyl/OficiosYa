@@ -20,6 +20,8 @@ test.beforeEach(async ({ page }) => {
   await page.route('**/api/**', async (route) => {
     const url = new URL(route.request().url());
     if (url.pathname.endsWith('/auth/me')) return response(route, { user });
+    if (url.pathname.endsWith('/categorias')) return response(route, [{ id_categoria: 1, nombre: 'Plomería' }]);
+    if (url.pathname.endsWith('/auth/refresh-token')) return response(route, { message: 'Sesión expirada' }, 401);
     if (url.pathname.endsWith('/zonas')) return response(route, [{ id_zona: 5, nombre: 'Zona 10', estado: 'ACTIVA' }]);
     if (url.pathname.endsWith('/search/profiles')) return response(route, { total: 1, perfiles: [worker] });
     if (url.pathname.endsWith('/servicios')) return response(route, services);
@@ -29,7 +31,7 @@ test.beforeEach(async ({ page }) => {
 });
 
 async function openRequest(page) {
-  await page.goto('/');
+  await page.goto('/buscar');
   await page.getByRole('button', { name: 'Solicitar servicio', exact: true }).click();
   await expect(page.getByRole('dialog')).toBeVisible();
   await page.getByRole('combobox', { name: 'Servicio *', exact: true }).selectOption('19');
@@ -41,11 +43,11 @@ test('HU-10/HU-11: sends combined filters, omits unchecked verification, clears 
     queries.push(Object.fromEntries(new URL(route.request().url()).searchParams));
     return response(route, { total: 13, perfiles: [worker] });
   });
-  await page.goto('/');
+  await page.goto('/buscar');
   await expect(page.getByText('13 resultados')).toBeVisible();
   expect(queries.at(-1).verificado).toBeUndefined();
   await page.getByLabel('Buscar por oficio o servicio').fill('  plomería  ');
-  await page.getByLabel('Zona de cobertura').selectOption('5');
+  await page.getByLabel('Zona / cuadrante (El Asintal)').selectOption('5');
   await page.getByLabel('Mínimo', { exact: true }).fill('50');
   await page.getByLabel('Máximo', { exact: true }).fill('150');
   await page.getByLabel('Calificación mínima').selectOption('4');
@@ -74,7 +76,7 @@ test('Rejects inverted prices without a request; handles empty and server errors
     count += 1;
     return mode === 'error' ? response(route, { message: 'Búsqueda temporalmente no disponible' }, 503) : response(route, { total: 0, perfiles: [] });
   });
-  await page.goto('/');
+  await page.goto('/buscar');
   await expect(page.getByText('No encontramos profesionales')).toBeVisible();
   const before = count;
   await page.getByLabel('Mínimo', { exact: true }).fill('200');
@@ -86,7 +88,7 @@ test('Rejects inverted prices without a request; handles empty and server errors
   await page.getByRole('button', { name: 'Limpiar', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('temporalmente');
   mode = 'empty';
-  await page.getByRole('button', { name: 'Reintentar búsqueda' }).click();
+  await page.getByRole('button', { name: 'Reintentar', exact: true }).click();
   await expect(page.getByText('No encontramos profesionales')).toBeVisible();
 });
 
@@ -96,7 +98,7 @@ test('Latest search wins when an earlier response is delayed', async ({ page }) 
     if (q === 'vieja') await new Promise((resolve) => setTimeout(resolve, 600));
     await response(route, { total: 1, perfiles: [{ ...worker, nombre: q === 'vieja' ? 'Resultado anterior' : 'Resultado actual' }] }).catch(() => {});
   });
-  await page.goto('/');
+  await page.goto('/buscar');
   await page.getByLabel('Buscar por oficio o servicio').fill('vieja');
   await page.getByRole('button', { name: 'Buscar', exact: true }).click();
   await page.getByLabel('Buscar por oficio o servicio').fill('nueva');
@@ -142,7 +144,7 @@ test('HU-13: validates, sends exact authenticated payload once and shows server 
 test('Service failures, no services and own profile block invalid submissions', async ({ page }) => {
   let fail = true;
   await page.route('**/api/servicios**', (route) => fail ? response(route, { message: 'Servicios no disponibles' }, 503) : response(route, []));
-  await page.goto('/');
+  await page.goto('/buscar');
   await page.getByRole('button', { name: 'Solicitar servicio', exact: true }).click();
   await expect(page.getByRole('alert')).toContainText('Servicios no disponibles');
   await expect(page.getByRole('button', { name: 'Enviar solicitud', exact: true })).toBeDisabled();
@@ -197,7 +199,7 @@ test('Desktop/mobile layout and modal keyboard focus; capture manual examples', 
     await page.screenshot({ path: path.join(process.env.MANUAL_SCREENSHOTS, name), fullPage: true });
   };
   await page.route('**/api/search/profiles**', (route) => response(route, { total: 2, perfiles: [worker, { ...worker, id_perfil: 9, nombre: 'Miguel Pérez', oficio_principal: 'Electricidad', descripcion: 'Diagnóstico de fallas eléctricas y mantenimiento de instalaciones del hogar.', reputacion: 4.6, tarifas: { tipo: 'por_hora', monto_desde: 95 } }] }));
-  await page.goto('/');
+  await page.goto('/buscar');
   await expect(page.getByText('2 resultados')).toBeVisible();
   await capture('01-busqueda.png');
   await page.getByRole('button', { name: 'Solicitar servicio', exact: true }).first().click();

@@ -88,6 +88,20 @@ export class RequestsService {
     return this.present(saved, perfil, servicio);
   }
 
+  async listClient(cliente: UsuarioRow) {
+    const rows = await this.findRequests('id_cliente', cliente.id_usuario);
+    return this.presentMany(rows);
+  }
+
+  async listWorker(usuario: UsuarioRow) {
+    const perfil = await this.findPerfilByUser(usuario.id_usuario);
+    if (!perfil) {
+      throw new NotFoundException('Aún no tienes un perfil de trabajador.');
+    }
+    const rows = await this.findRequests('id_trabajador', perfil.id_perfil);
+    return this.presentMany(rows);
+  }
+
   async updateStatus(usuario: UsuarioRow, idSolicitud: number, dto: UpdateRequestStatusDto) {
     const solicitud = await this.findSolicitud(idSolicitud);
     if (!solicitud) {
@@ -145,7 +159,7 @@ export class RequestsService {
         throw new ForbiddenException('No puedes cambiar el estado de esta solicitud.');
       }
       if (/INVALID_ACTION/i.test(error.message)) {
-        throw new BadRequestException('La acción debe ser Aceptar, Rechazar, Cancelar o Finalizar.');
+        throw new BadRequestException('La acción debe ser Aceptar, Rechazar, Iniciar, Cancelar o Finalizar.');
       }
       if (/NOT_FOUND/i.test(error.message)) {
         throw new NotFoundException('La solicitud no existe.');
@@ -206,6 +220,65 @@ export class RequestsService {
 
   private isEstadoCheckError(message?: string) {
     return /chk_solicitud_estado|check constraint/i.test(message || '');
+  }
+
+  private async presentMany(rows: SolicitudRow[]) {
+    const profileIds = [...new Set(rows.map((row) => row.id_trabajador))];
+    const serviceIds = [...new Set(rows.map((row) => row.id_servicio))];
+    const clientIds = [...new Set(rows.map((row) => row.id_cliente))];
+    const requestIds = rows.map((row) => row.id_solicitud);
+    const [profiles, services, clients, reviews] = await Promise.all([
+      this.loadMap('perfil_trabajador', 'id_perfil', profileIds, 'id_perfil, id_usuario, oficio_principal, disponibilidad'),
+      this.loadMap('servicio_ofrecido', 'id_servicio', serviceIds, 'id_servicio, id_perfil, nombre, descripcion, activo'),
+      this.loadMap('usuario', 'id_usuario', clientIds, 'id_usuario, nombre, telefono'),
+      this.loadMap('resena', 'id_solicitud', requestIds, 'id_resena, id_solicitud, calificacion, comentario, fecha'),
+    ]);
+    const ownerIds = [...new Set([...profiles.values()].map((profile) => Number(profile.id_usuario)))];
+    const owners = await this.loadMap('usuario', 'id_usuario', ownerIds, 'id_usuario, nombre, telefono');
+    return rows.map((row) => {
+      const profile = profiles.get(row.id_trabajador);
+      const service = services.get(row.id_servicio);
+      const client = clients.get(row.id_cliente);
+      const owner = profile ? owners.get(Number(profile.id_usuario)) : null;
+      const review = reviews.get(row.id_solicitud);
+      return {
+        ...row,
+        estado: normalizeEstado(row.estado),
+        cliente: client ? { id_usuario: client.id_usuario, nombre: client.nombre, telefono: client.telefono } : null,
+        trabajador: profile ? { id_perfil: profile.id_perfil, id_usuario: profile.id_usuario, nombre: owner?.nombre || 'Trabajador', oficio_principal: profile.oficio_principal } : null,
+        servicio: service ? { id_servicio: service.id_servicio, nombre: service.nombre } : null,
+        resena: review || null,
+      };
+    });
+  }
+
+  private async loadMap(table: string, key: string, ids: number[], select: string) {
+    const map = new Map<number, Record<string, any>>();
+    if (!ids.length) return map;
+    const { data, error } = await this.supabase.from(table).select(select).in(key, ids);
+    if (error) throw new BadRequestException(error.message);
+    for (const row of data || []) map.set(Number((row as any)[key]), row as Record<string, any>);
+    return map;
+  }
+
+  private async findRequests(key: 'id_cliente' | 'id_trabajador', value: number) {
+    const { data, error } = await this.supabase
+      .from('solicitud_servicio')
+      .select('*')
+      .eq(key, value)
+      .order('id_solicitud', { ascending: false });
+    if (error) throw new BadRequestException(error.message);
+    return (data || []) as SolicitudRow[];
+  }
+
+  private async findPerfilByUser(idUsuario: number) {
+    const { data, error } = await this.supabase
+      .from('perfil_trabajador')
+      .select('id_perfil, id_usuario, oficio_principal, disponibilidad')
+      .eq('id_usuario', idUsuario)
+      .maybeSingle();
+    if (error) throw new BadRequestException(error.message);
+    return (data as PerfilRow) || null;
   }
 
   private present(row: SolicitudRow, perfil: PerfilRow, servicio: ServicioRow | null) {

@@ -8,6 +8,27 @@
   background-color: var(--color-bg);
 }
 
+.client { background: linear-gradient(135deg, #e6f5f2, #f7faf9); }
+.worker { background: linear-gradient(135deg, #e9eef8, #f8fafc); }
+.login { gap: clamp(28px, 5vw, 80px); padding: 40px 24px; }
+.intro { max-width: 460px; color: #183e37; }
+.worker .intro { color: #243c60; }
+.badge { font-size: 12px; letter-spacing: 1.6px; font-weight: 700; margin-bottom: 18px; }
+.intro h2 { font-size: clamp(28px, 3.4vw, 44px); line-height: 1.15; margin-bottom: 20px; }
+.intro > p { line-height: 1.65; }
+.features { display: grid; gap: 14px; list-style: none; padding: 0; margin: 28px 0; }
+.features li { padding: 14px 18px; border: 1px solid #cce2db; border-radius: 14px; background: #ffffffb3; line-height: 1.5; }
+.worker .features li { border-color: #ccd8e9; }
+.note { font-size: 13px; color: #526b67; }
+.worker .note { color: #51627c; }
+@media (max-width: 850px) {
+  .login { flex-direction: column; gap: 24px; padding: 28px 16px; }
+  .intro { width: 100%; max-width: 460px; }
+  .intro h2 { font-size: 28px; }
+  .features { display: none; }
+  .note { margin-top: 12px; }
+}
+
 .main {
   flex: 1 1 auto;
   display: flex;

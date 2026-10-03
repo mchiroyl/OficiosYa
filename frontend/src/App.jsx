@@ -37,8 +37,8 @@ function AuthenticatedApp() {
   const legacyChat = matchPath(LEGACY_CHAT_PATTERN, path);
   const categoryParams = matchPath(CATEGORY_PATTERN, path);
 
-  if (path === '/mis-solicitudes') return <ClientDashboard />;
-  if (path === '/trabajador/bandeja') return <WorkerInbox />;
+  if (path === '/mis-solicitudes' || path === '/client/requests') return <ClientDashboard />;
+  if (path === '/trabajador/bandeja' || path === '/worker/requests') return <WorkerInbox />;
   if (path === '/worker/profile') return <WorkerProfile />;
   if (path === '/chat') return <ChatInbox />;
   if (chatThread) return <ChatThread />;

@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import AppHeader from '../components/AppHeader';
 import StatusBadge from '../components/StatusBadge';
+import RequestDetails from '../components/requests/RequestDetails';
+import RequestFilters, { filterRequests } from '../components/requests/RequestFilters';
+import BackLink from '../components/BackLink';
+import { displayStatus } from '../lib/requestStatus';
 import ReviewForm from '../components/reviews/ReviewForm';
 import ReportModal from '../components/reports/ReportModal';
 import { useAuth } from '../auth/AuthContext';
@@ -12,6 +16,8 @@ export default function ClientDashboard() {
   const { session, user } = useAuth();
   const token = session?.accessToken;
   const [items, setItems] = useState([]);
+  const [filter, setFilter] = useState('Todas');
+  const visible = filterRequests(items, filter);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
@@ -22,8 +28,8 @@ export default function ClientDashboard() {
     setLoading(true);
     setError('');
     try {
-      const data = await listClientRequests(user.id_usuario, token);
-      setItems(data);
+      const data = await listClientRequests(token);
+      setItems(data.map((item) => ({ ...item, estado: displayStatus(item.estado) })));
     } catch (err) {
       setError(err.message || 'No se pudieron cargar tus solicitudes.');
       setItems([]);
@@ -53,6 +59,7 @@ export default function ClientDashboard() {
     <div className={styles.page}>
       <AppHeader />
       <main className={styles.main}>
+        <BackLink to="/">Volver al inicio</BackLink>
         <header className={styles.header}>
           <div>
             <p className={styles.eyebrow}>DASHBOARD DEL CLIENTE</p>
@@ -61,17 +68,19 @@ export default function ClientDashboard() {
           </div>
         </header>
 
+        <RequestFilters value={filter} onChange={setFilter} />
+
         {error && (
           <p className={styles.error} role="alert">
-            {error}
+            {error}{' '}<button type="button" onClick={load}>Reintentar</button>
           </p>
         )}
 
         {loading ? (
           <div className={styles.empty}>Cargando solicitudes…</div>
-        ) : items.length === 0 ? (
+        ) : visible.length === 0 ? (
           <div className={styles.empty}>
-            <h2>Aún no tienes solicitudes</h2>
+            <h2>{items.length ? 'No hay solicitudes en esta vista' : 'Aún no tienes solicitudes'}</h2>
             <p>Busca un profesional y envía tu primera solicitud de servicio.</p>
             <Link to="/" className={styles.primaryLink}>
               Ir a buscar
@@ -79,11 +88,11 @@ export default function ClientDashboard() {
           </div>
         ) : (
           <ul className={styles.list}>
-            {items.map((item) => {
+            {visible.map((item) => {
               const estado = item.estado || 'Enviada';
               const canCancel = estado === 'Enviada' || estado === 'Aceptada' || estado === 'En Proceso';
               const canFinish = estado === 'Aceptada' || estado === 'En Proceso';
-              const canReview = estado === 'Finalizada';
+              const canReview = estado === 'Finalizada' && !item.resena;
               const canChat = ['Aceptada', 'En Proceso', 'Finalizada'].includes(estado);
 
               return (
@@ -101,6 +110,7 @@ export default function ClientDashboard() {
                       : 'Sin fecha programada'}
                     {item.urgente ? ' · Urgente' : ''}
                   </p>
+                  <RequestDetails request={item} perspective="client" />
                   <div className={styles.actions}>
                     {canChat && (
                       <Link to={`/chat/${item.id_solicitud}`} className={styles.secondary}>
@@ -166,7 +176,7 @@ export default function ClientDashboard() {
           context={{
             tipo: 'solicitud',
             id_referencia: reportFor.id_solicitud,
-            id_reportado: reportFor.id_trabajador,
+            id_reportado: reportFor.trabajador?.id_usuario,
           }}
           onClose={() => setReportFor(null)}
         />

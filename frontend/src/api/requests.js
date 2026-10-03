@@ -1,5 +1,4 @@
 import { api } from './client';
-import { listResource } from './resources';
 
 export function listWorkerServices(workerId, { signal } = {}) {
   const query = new URLSearchParams({ id_perfil: String(workerId), activo: 'true' });
@@ -21,13 +20,13 @@ export function updateRequestStatus(id, accionOrPayload, token) {
 }
 
 /** Solicitudes del cliente autenticado. */
-export function listClientRequests(clientId, token) {
-  return listResource('solicitudes', { id_cliente: clientId, order: 'fecha_creacion:desc' }, token);
+export function listClientRequests(token) {
+  return api('/requests/client', { token });
 }
 
 /** Solicitudes dirigidas al perfil del trabajador. */
-export function listWorkerRequests(workerProfileId, token) {
-  return listResource('solicitudes', { id_trabajador: workerProfileId, order: 'fecha_creacion:desc' }, token);
+export function listWorkerRequests(token) {
+  return api('/requests/worker', { token });
 }
 
 export function getRequest(id, token) {

@@ -7,6 +7,7 @@ import Checkbox from '../components/ui/Checkbox';
 import { MailIcon, LockIcon, CheckCircleIcon } from '../components/icons/Icons';
 import { Link, useNavigate } from '../router';
 import { useAuth } from '../auth/AuthContext';
+import { useMode } from '../mode/ModeContext';
 import authStyles from '../styles/auth.module.css';
 import styles from './Login.module.css';
 
@@ -36,8 +37,9 @@ function readRegisterSuccess() {
 
 export default function Login() {
   const { login } = useAuth();
+  const { isWorker } = useMode();
   const navigate = useNavigate();
-  const registered = readRegisterSuccess();
+  const [registered] = useState(readRegisterSuccess);
   const [email, setEmail] = useState(registered?.correo || '');
   const [password, setPassword] = useState('');
   const [rememberMe, setRememberMe] = useState(false);
@@ -130,9 +132,9 @@ export default function Login() {
       <Logo />
 
       <header className={authStyles.header}>
-        <h1 className={authStyles.title}>Iniciar sesión</h1>
+        <h1 className={authStyles.title}>{isWorker ? 'Ingresa como trabajador' : 'Ingresa como cliente'}</h1>
         <p className={authStyles.subtitle}>
-          Ingresa tus datos para acceder a tu cuenta.
+          {isWorker ? 'Accede a tu panel de trabajo y gestiona tus servicios.' : 'Accede para buscar profesionales y gestionar tus solicitudes.'}
         </p>
       </header>
 
@@ -187,7 +189,7 @@ export default function Login() {
         </div>
 
         <Button type="submit" loading={loading} disabled={loading}>
-          Iniciar sesión
+          {isWorker ? 'Entrar como trabajador' : 'Entrar como cliente'}
         </Button>
       </form>
 

@@ -1,6 +1,10 @@
 import { useEffect, useState } from 'react';
 import AppHeader from '../components/AppHeader';
 import StatusBadge from '../components/StatusBadge';
+import RequestDetails from '../components/requests/RequestDetails';
+import RequestFilters, { filterRequests } from '../components/requests/RequestFilters';
+import BackLink from '../components/BackLink';
+import { displayStatus } from '../lib/requestStatus';
 import { useAuth } from '../auth/AuthContext';
 import { listWorkerRequests, updateRequestStatus } from '../api/requests';
 import { getWorkerProfile, updateAvailability } from '../api/worker';
@@ -10,9 +14,10 @@ import styles from './Dashboard.module.css';
 export default function WorkerInbox() {
   const { session } = useAuth();
   const token = session?.accessToken;
-  const [profileId, setProfileId] = useState(session?.perfilTrabajador?.id_perfil || null);
   const [disponibilidad, setDisponibilidad] = useState('Disponible');
   const [items, setItems] = useState([]);
+  const [filter, setFilter] = useState('Activas');
+  const visible = filterRequests(items, filter);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [busyId, setBusyId] = useState(null);
@@ -24,15 +29,10 @@ export default function WorkerInbox() {
     setLoading(true);
     setError('');
     try {
-      let id = profileId;
-      if (!id) {
-        const profile = await getWorkerProfile(token);
-        id = profile.id_perfil;
-        setProfileId(id);
-        setDisponibilidad(profile.disponibilidad || 'Disponible');
-      }
-      const data = await listWorkerRequests(id, token);
-      setItems(data);
+      const profile = await getWorkerProfile(token);
+      setDisponibilidad(profile.disponibilidad || 'Disponible');
+      const data = await listWorkerRequests(token);
+      setItems(data.map((item) => ({ ...item, estado: displayStatus(item.estado) })));
     } catch (err) {
       setError(err.message || 'No se pudo cargar la bandeja.');
       setItems([]);
@@ -78,6 +78,7 @@ export default function WorkerInbox() {
     <div className={styles.page}>
       <AppHeader />
       <main className={styles.main}>
+        <BackLink to="/">Volver al inicio</BackLink>
         <header className={styles.header}>
           <p className={styles.eyebrow}>PANEL DEL TRABAJADOR</p>
           <h1>Bandeja de solicitudes</h1>
@@ -100,22 +101,24 @@ export default function WorkerInbox() {
           </label>
         </div>
 
+        <RequestFilters value={filter} onChange={setFilter} />
+
         {error && (
           <p className={styles.error} role="alert">
-            {error}
+            {error}{' '}<button type="button" onClick={load}>Reintentar</button>
           </p>
         )}
 
         {loading ? (
           <div className={styles.empty}>Cargando bandeja…</div>
-        ) : items.length === 0 ? (
+        ) : visible.length === 0 ? (
           <div className={styles.empty}>
-            <h2>Sin solicitudes nuevas</h2>
+            <h2>{items.length ? 'No hay peticiones en esta vista' : 'Sin solicitudes nuevas'}</h2>
             <p>Cuando un cliente te contacte, aparecerán aquí.</p>
           </div>
         ) : (
           <ul className={styles.list}>
-            {items.map((item) => {
+            {visible.map((item) => {
               const estado = item.estado || 'Enviada';
               const canDecide = estado === 'Enviada';
               const canFinish = estado === 'Aceptada' || estado === 'En Proceso';
@@ -139,74 +142,33 @@ export default function WorkerInbox() {
 
                   {rejectId === item.id_solicitud && (
                     <div className={styles.reasonBox}>
+                      <p>¿Rechazar esta solicitud de servicio?</p>
                       <label htmlFor={`motivo-${item.id_solicitud}`}>Motivo del rechazo</label>
-                      <textarea
-                        id={`motivo-${item.id_solicitud}`}
-                        rows={3}
-                        value={motivo}
-                        onChange={(e) => setMotivo(e.target.value)}
-                        placeholder="Explica brevemente por qué no puedes tomar el trabajo"
-                      />
+                      <textarea id={`motivo-${item.id_solicitud}`} rows={3} value={motivo}
+                        onChange={(event) => setMotivo(event.target.value)}
+                        placeholder="Explica brevemente por qué no puedes tomar el trabajo" />
                       <div className={styles.actions}>
-                        <button
-                          type="button"
-                          className={styles.ghost}
-                          onClick={() => {
-                            setRejectId(null);
-                            setMotivo('');
-                          }}
-                        >
-                          Cancelar
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.primary}
-                          disabled={busyId === item.id_solicitud || motivo.trim().length < 5}
-                          onClick={() => act(item.id_solicitud, 'Rechazar')}
-                        >
-                          Confirmar rechazo
-                          {motivo.trim() ? ` (${motivo.trim().slice(0, 40)})` : ''}
-                        </button>
+                        <button type="button" className={styles.ghost} onClick={() => { setRejectId(null); setMotivo(''); }}>Cancelar</button>
+                        <button type="button" className={styles.primary} disabled={busyId === item.id_solicitud || motivo.trim().length < 5}
+                          onClick={() => act(item.id_solicitud, 'Rechazar')}>Confirmar rechazo</button>
                       </div>
                     </div>
                   )}
-
+                  <RequestDetails request={item} perspective="worker" />
                   <div className={styles.actions}>
-                    {canChat && (
-                      <Link to={`/chat/${item.id_solicitud}`} className={styles.secondary}>
-                        Chat
-                      </Link>
-                    )}
-                    {canDecide && (
-                      <>
-                        <button
-                          type="button"
-                          className={styles.primary}
-                          disabled={busyId === item.id_solicitud}
-                          onClick={() => act(item.id_solicitud, 'Aceptar')}
-                        >
-                          Aceptar
-                        </button>
-                        <button
-                          type="button"
-                          className={styles.ghost}
-                          disabled={busyId === item.id_solicitud}
-                          onClick={() => setRejectId(item.id_solicitud)}
-                        >
-                          Rechazar
-                        </button>
-                      </>
-                    )}
-                    {canFinish && (
-                      <button
-                        type="button"
-                        className={styles.primary}
-                        disabled={busyId === item.id_solicitud}
-                        onClick={() => act(item.id_solicitud, 'Finalizar')}
-                      >
-                        Confirmar cierre
-                      </button>
-                    )}
+                    {canChat && <Link to={`/chat/${item.id_solicitud}`} className={styles.secondary}>Chat</Link>}
+                    {canDecide && <>
+                      <button type="button" className={styles.primary} disabled={busyId === item.id_solicitud}
+                        onClick={() => act(item.id_solicitud, 'Aceptar')}>Aceptar</button>
+                      <button type="button" className={styles.ghost} disabled={busyId === item.id_solicitud}
+                        onClick={() => setRejectId(item.id_solicitud)}>Rechazar</button>
+                    </>}
+                    {estado === 'Aceptada' && <button type="button" className={styles.primary}
+                      disabled={busyId === item.id_solicitud}
+                      onClick={() => act(item.id_solicitud, 'Iniciar')}>Iniciar trabajo</button>}
+                    {canFinish && <button type="button" className={styles.primary}
+                      disabled={busyId === item.id_solicitud}
+                      onClick={() => act(item.id_solicitud, 'Finalizar')}>Confirmar cierre</button>}
                   </div>
                 </li>
               );

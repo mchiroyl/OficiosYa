@@ -37,3 +37,7 @@
   .grid2 { grid-template-columns: 1fr; }
   .cardTop { flex-direction: column; }
 }
+
+.filters { display: flex; flex-wrap: wrap; gap: 8px; margin-bottom: 20px; }
+.details { display: grid; gap: 6px; font-size: 14px; overflow-wrap: anywhere; }
+.review { border-top: 1px solid #dbe7e5; padding-top: 12px; display: grid; gap: 6px; }

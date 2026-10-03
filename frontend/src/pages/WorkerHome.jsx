@@ -25,7 +25,7 @@ export default function WorkerHome() {
         const profile = await getWorkerProfile(token);
         if (cancelled) return;
         setDisponibilidad(profile.disponibilidad || 'Disponible');
-        const requests = await listWorkerRequests(profile.id_perfil, token);
+        const requests = await listWorkerRequests(token);
         if (cancelled) return;
         setPending(requests.filter((r) => r.estado === 'Enviada').length);
       } catch (err) {

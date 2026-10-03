@@ -8,11 +8,12 @@ export const REQUEST_STATUSES = [
   'Finalizada',
 ];
 
-/** El backend usa Aceptada como estado activo; En Proceso es etiqueta UX equivalente. */
+/** Normaliza estados históricos de ambas ramas. */
 export function displayStatus(estado) {
-  if (!estado) return 'Enviada';
-  if (estado === 'PENDIENTE') return 'Enviada';
-  return estado;
+  const aliases = { PENDIENTE: 'Enviada', ENVIADA: 'Enviada', ACEPTADA: 'Aceptada',
+    EN_PROCESO: 'En Proceso', 'EN PROCESO': 'En Proceso', RECHAZADA: 'Rechazada',
+    CANCELADA: 'Cancelada', FINALIZADA: 'Finalizada', COMPLETADA: 'Finalizada' };
+  return aliases[String(estado || 'PENDIENTE').trim().toUpperCase()] || estado;
 }
 
 export const STATUS_COLORS = {

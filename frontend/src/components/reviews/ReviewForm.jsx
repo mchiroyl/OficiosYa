@@ -42,6 +42,8 @@ export default function ReviewForm({ request, onClose, onDone }) {
         className={styles.panel}
         onClick={(e) => e.stopPropagation()}
         onSubmit={submit}
+        role="dialog"
+        aria-modal="true"
         aria-labelledby="review-title"
       >
         <header className={styles.header}>
@@ -59,6 +61,7 @@ export default function ReviewForm({ request, onClose, onDone }) {
               className={styles.star}
               aria-checked={stars === value}
               role="radio"
+              aria-label={`${value} ${value === 1 ? 'estrella' : 'estrellas'}`}
               onMouseEnter={() => setHover(value)}
               onMouseLeave={() => setHover(0)}
               onClick={() => setStars(value)}

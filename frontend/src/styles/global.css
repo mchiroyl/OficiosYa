@@ -22,6 +22,17 @@ body {
   -moz-osx-font-smoothing: grayscale;
 }
 
+::selection {
+  color: var(--color-text);
+  background: var(--color-accent-light);
+}
+
+button,
+select,
+textarea {
+  font: inherit;
+}
+
 #root {
   min-height: 100%;
   min-width: 0;

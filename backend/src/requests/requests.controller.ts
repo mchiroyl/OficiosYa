@@ -1,4 +1,4 @@
-import { Body, Controller, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, UseGuards } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
@@ -14,6 +14,18 @@ import { RequestsService } from './requests.service';
 export class RequestsController {
   constructor(private readonly requests: RequestsService) {}
 
+  @Get('client')
+  @ApiOperation({ summary: 'Historial del cliente autenticado, con servicio y reseña' })
+  listClient(@CurrentUser() user: UsuarioRow) {
+    return this.requests.listClient(user);
+  }
+
+  @Get('worker')
+  @ApiOperation({ summary: 'Solicitudes del trabajador autenticado, con cliente y reseña' })
+  listWorker(@CurrentUser() user: UsuarioRow) {
+    return this.requests.listWorker(user);
+  }
+
   @Post('create')
   @ApiOperation({
     summary: 'Crear una nueva solicitud de servicio (HU-13)',
@@ -28,7 +40,7 @@ export class RequestsController {
   @ApiOperation({
     summary: 'Cambiar estado de una solicitud (HU-14, HU-15)',
     description:
-      'Máquina de estados transaccional. Aceptar/Rechazar: trabajador sobre Enviada. Cancelar: cliente sobre Enviada o Aceptada. Finalizar: cliente o trabajador sobre Aceptada. Impide saltos inválidos y condiciones de carrera.',
+      'Máquina de estados transaccional. Aceptar/Rechazar: trabajador sobre Enviada. Cancelar: cliente sobre Enviada o Aceptada. Iniciar: trabajador sobre Aceptada. Finalizar: cliente o trabajador sobre Aceptada o En Proceso. Impide saltos inválidos y condiciones de carrera.',
   })
   @ApiResponse({ status: 400, description: 'Salto de estado inválido.' })
   @ApiResponse({ status: 403, description: 'El actor no puede ejecutar esa acción.' })

@@ -79,7 +79,7 @@ export default function AppHeader() {
             </>
           )}
           {(admin || isAdmin) && (
-            <Link to="/admin/reports" className={linkClass('/admin')}>
+            <Link to="/admin" className={linkClass('/admin')}>
               Admin
             </Link>
           )}

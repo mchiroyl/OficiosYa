@@ -1,11 +1,11 @@
 :root {
   /* Colores */
-  --color-primary: #299d98;
-  --color-primary-dark: #247c7c;
-  --color-secondary: #83d0cc;
-  --color-accent-light: #c2ece9;
-  --color-bg-light: #e9f7f6;
-  --color-bg: #f8f8f8;
+  --color-primary: #3d9b9b;
+  --color-primary-dark: #287c7c;
+  --color-secondary: #86d0d0;
+  --color-accent-light: #ceede8;
+  --color-bg-light: #e6f5f2;
+  --color-bg: #f5f5f5;
   --color-card: #ffffff;
   --color-text: #000000;
   --color-text-secondary: #979797;
@@ -42,10 +42,11 @@
   --space-10: 2.5rem;
 
   /* Bordes y sombras */
-  --radius-sm: 6px;
-  --radius-md: 10px;
-  --radius-lg: 12px;
-  --shadow-card: 0 2px 12px rgba(0, 0, 0, 0.06);
+  --radius-sm: 8px;
+  --radius-md: 14px;
+  --radius-lg: 20px;
+  --radius-pill: 999px;
+  --shadow-card: 0 10px 30px rgba(40, 124, 124, 0.08);
   --shadow-focus: 0 0 0 3px var(--color-accent-light);
 
   /* Componentes */
