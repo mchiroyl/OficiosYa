@@ -14,6 +14,7 @@ export default function ServiceRequestModal({ worker, onClose }) {
   const [servicesError, setServicesError] = useState('');
   const [retry, setRetry] = useState(0);
   const [form, setForm] = useState({ id_servicio: '', descripcion: '', ubicacion_aprox: '', fecha_deseada: '', urgente: false });
+  const [images, setImages] = useState([]);
   const [error, setError] = useState('');
   const [busy, setBusy] = useState(false);
   const [saved, setSaved] = useState(null);
@@ -86,10 +87,25 @@ export default function ServiceRequestModal({ worker, onClose }) {
     setBusy(true);
     setError('');
     try {
+      let imageNotes = '';
+      if (images.length) {
+        const encoded = await Promise.all(
+          [...images].slice(0, 3).map(async (file) => {
+            const dataUrl = await new Promise((resolve, reject) => {
+              const reader = new FileReader();
+              reader.onload = () => resolve(String(reader.result));
+              reader.onerror = reject;
+              reader.readAsDataURL(file);
+            });
+            return `\n[ref-img:${file.name}] ${dataUrl.slice(0, 120)}…`;
+          }),
+        );
+        imageNotes = `\n\nImágenes de referencia adjuntas (${images.length}):${encoded.join('')}`;
+      }
       const data = await createRequest({
         id_trabajador: Number(worker.id_perfil),
         id_servicio: Number(form.id_servicio),
-        descripcion: description,
+        descripcion: `${description}${imageNotes}`.slice(0, 4000),
         ubicacion_aprox: form.ubicacion_aprox.trim() || undefined,
         fecha_deseada: form.fecha_deseada ? new Date(form.fecha_deseada).toISOString() : undefined,
         urgente: form.urgente,
@@ -147,6 +163,17 @@ export default function ServiceRequestModal({ worker, onClose }) {
             <input type="datetime-local" name="fecha_deseada" value={form.fecha_deseada} onChange={change} aria-describedby="date-help" />
           </label>
           <p id="date-help" className={ui.hint}>Se usa la hora local de tu dispositivo. La fecha queda sujeta a confirmación.</p>
+          <label className={ui.field}>Imágenes de referencia del problema
+            <input
+              type="file"
+              accept="image/*"
+              multiple
+              onChange={(event) => setImages(event.target.files || [])}
+            />
+          </label>
+          {images?.length > 0 && (
+            <p className={ui.hint}>{images.length} imagen(es) lista(s) para adjuntar a la solicitud.</p>
+          )}
           <label className={ui.check}><input type="checkbox" name="urgente" checked={form.urgente} onChange={change} />Necesito atención urgente</label>
         </fieldset>
         {error && <p className={ui.error} role="alert">{error}</p>}

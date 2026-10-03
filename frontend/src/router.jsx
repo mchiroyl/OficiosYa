@@ -2,41 +2,48 @@ import { createContext, useCallback, useContext, useEffect, useState } from 'rea
 
 const RouterContext = createContext(null);
 
-function splitLocation(to) {
-  try {
-    const url = new URL(to, window.location.origin);
-    return {
-      pathname: url.pathname,
-      href: `${url.pathname}${url.search}${url.hash}`,
-    };
-  } catch {
-    return { pathname: to, href: to };
-  }
+function currentPathname() {
+  return window.location.pathname;
+}
+
+function currentSearch() {
+  return window.location.search || '';
 }
 
 export function Router({ children }) {
-  const [path, setPath] = useState(() => window.location.pathname);
+  const [path, setPath] = useState(currentPathname);
+  const [search, setSearch] = useState(currentSearch);
 
   useEffect(() => {
-    const onPopState = () => setPath(window.location.pathname);
+    const onPopState = () => {
+      setPath(currentPathname());
+      setSearch(currentSearch());
+    };
     window.addEventListener('popstate', onPopState);
     return () => window.removeEventListener('popstate', onPopState);
   }, []);
 
   const navigate = useCallback((to, options = {}) => {
-    const { pathname, href } = splitLocation(to);
+    const url = new URL(to, window.location.origin);
+    const nextPath = url.pathname;
+    const nextSearch = url.search || '';
+    const nextHash = url.hash || '';
+    const full = `${nextPath}${nextSearch}${nextHash}`;
     const current = `${window.location.pathname}${window.location.search}${window.location.hash}`;
-    if (href === current) return;
+
+    if (full === current && !options.replace) return;
+
     if (options.replace) {
-      window.history.replaceState({}, '', href);
+      window.history.replaceState({}, '', full);
     } else {
-      window.history.pushState({}, '', href);
+      window.history.pushState({}, '', full);
     }
-    setPath(pathname);
+    setPath(nextPath);
+    setSearch(nextSearch);
   }, []);
 
   return (
-    <RouterContext.Provider value={{ path, navigate }}>
+    <RouterContext.Provider value={{ path, search, navigate }}>
       {children}
     </RouterContext.Provider>
   );
@@ -52,6 +59,10 @@ function useRouter() {
 
 export function usePath() {
   return useRouter().path;
+}
+
+export function useSearch() {
+  return useRouter().search;
 }
 
 export function useNavigate() {

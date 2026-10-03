@@ -20,6 +20,15 @@ export function updateWorkerAvailability(payload, token) {
   });
 }
 
+/** Alias usado por el panel de modo trabajador. */
+export function updateAvailability(payload, token) {
+  return updateWorkerAvailability(payload, token);
+}
+
 export function listZonas() {
   return api('/zonas');
+}
+
+export function getPublicProfile(id, token) {
+  return api(`/perfiles-trabajador/${id}`, { token });
 }
