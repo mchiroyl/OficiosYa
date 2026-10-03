@@ -1,0 +1,229 @@
+.page {
+  min-height: 100%;
+  background: var(--color-bg);
+  padding: var(--space-6) var(--space-4) var(--space-10);
+}
+
+.inner {
+  width: 100%;
+  max-width: 720px;
+  margin: 0 auto;
+}
+
+.threadInner {
+  max-width: 760px;
+}
+
+.header {
+  margin-bottom: var(--space-5);
+}
+
+.title {
+  font-family: var(--font-poppins);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-2xl);
+  color: var(--color-text);
+  margin-bottom: var(--space-2);
+}
+
+.subtitle,
+.transport,
+.status,
+.empty,
+.fileName,
+.preview,
+.meta {
+  font-family: var(--font-nunito);
+  font-size: var(--text-sm);
+  color: var(--color-text-secondary);
+  line-height: 1.45;
+}
+
+.transport {
+  margin-top: var(--space-2);
+  color: var(--color-primary-dark);
+}
+
+.list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+}
+
+.row {
+  display: flex;
+  gap: var(--space-3);
+  padding: var(--space-4);
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  text-decoration: none;
+  color: inherit;
+}
+
+.row:hover {
+  box-shadow: var(--shadow-focus);
+}
+
+.avatar {
+  width: 44px;
+  height: 44px;
+  border-radius: 14px;
+  display: grid;
+  place-items: center;
+  background: var(--color-bg-light);
+  color: var(--color-primary-dark);
+  font-family: var(--font-poppins);
+  font-weight: 600;
+  flex-shrink: 0;
+}
+
+.rowBody {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 4px;
+}
+
+.rowTop {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--space-3);
+  font-family: var(--font-poppins);
+  font-size: var(--text-sm);
+}
+
+.rowTop time {
+  color: var(--color-text-secondary);
+  font-family: var(--font-nunito);
+  font-weight: 400;
+}
+
+.preview {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.threadCard {
+  background: var(--color-card);
+  border-radius: var(--radius-lg);
+  box-shadow: var(--shadow-card);
+  padding: var(--space-4);
+  display: flex;
+  flex-direction: column;
+  min-height: 60vh;
+}
+
+.scroller {
+  flex: 1;
+  overflow-y: auto;
+  display: flex;
+  flex-direction: column;
+  gap: var(--space-3);
+  padding: var(--space-2);
+  min-height: 360px;
+  max-height: 58vh;
+}
+
+.bubble {
+  max-width: 80%;
+  padding: var(--space-3);
+  border-radius: 14px;
+}
+
+.mine {
+  align-self: flex-end;
+  background: var(--color-bg-light);
+}
+
+.theirs {
+  align-self: flex-start;
+  background: #f3f3f3;
+}
+
+.bubbleMeta {
+  font-size: 11px;
+  color: var(--color-text-secondary);
+  margin-bottom: 6px;
+}
+
+.bubbleText {
+  font-family: var(--font-nunito);
+  font-size: var(--text-sm);
+  line-height: 1.45;
+  margin: 0;
+  white-space: pre-wrap;
+}
+
+.image {
+  display: block;
+  max-width: 220px;
+  max-height: 220px;
+  border-radius: 10px;
+  object-fit: cover;
+  margin-bottom: 6px;
+}
+
+.composer {
+  display: grid;
+  grid-template-columns: auto 1fr auto;
+  gap: var(--space-2);
+  margin-top: var(--space-4);
+  align-items: center;
+}
+
+.textInput {
+  width: 100%;
+  min-height: var(--input-height);
+  padding: var(--space-3) var(--space-4);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  font-family: var(--font-nunito);
+  font-size: var(--text-base);
+}
+
+.fileBtn {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: var(--input-height);
+  padding: 0 var(--space-3);
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background: var(--color-card);
+  font-family: var(--font-poppins);
+  font-size: var(--text-sm);
+  cursor: pointer;
+}
+
+.fileBtn input {
+  position: absolute;
+  inset: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+
+.sendBtn {
+  width: auto;
+  min-width: 110px;
+}
+
+.error {
+  color: var(--color-error);
+  background: rgba(214, 69, 69, 0.08);
+  padding: var(--space-3);
+  border-radius: var(--radius-md);
+  font-size: var(--text-sm);
+  margin: var(--space-3) 0 0;
+}
+
+@media (max-width: 640px) {
+  .composer {
+    grid-template-columns: 1fr;
+  }
+}
