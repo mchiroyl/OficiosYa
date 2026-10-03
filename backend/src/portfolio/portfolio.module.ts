@@ -9,5 +9,6 @@ import { StorageService } from './storage.service';
   imports: [AuthModule],
   controllers: [PortfolioController],
   providers: [PortfolioService, ImageCompressService, StorageService],
+  exports: [ImageCompressService, StorageService],
 })
 export class PortfolioModule {}

@@ -1,4 +1,5 @@
 import { Module } from '@nestjs/common';
+import { AccessTokenService } from './access-token.service';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 import { JwtAuthGuard } from './jwt-auth.guard';
@@ -10,11 +11,12 @@ import { RecoveryTokenStore } from './recovery/recovery-token.store';
   controllers: [AuthController],
   providers: [
     AuthService,
+    AccessTokenService,
     JwtAuthGuard,
     OptionalJwtAuthGuard,
     RecoveryTokenStore,
     MailSimulatorService,
   ],
-  exports: [AuthService, JwtAuthGuard, OptionalJwtAuthGuard],
+  exports: [AuthService, AccessTokenService, JwtAuthGuard, OptionalJwtAuthGuard],
 })
 export class AuthModule {}

@@ -5,7 +5,7 @@ export function setupSwagger(app: INestApplication) {
   const config = new DocumentBuilder()
     .setTitle('OficiosYa API')
     .setDescription(
-      'Documentación REST de OficiosYa: autenticación, perfil y disponibilidad del trabajador (IDC-21, HU-05, HU-07), portafolio, búsqueda, solicitudes y reseñas.',
+      'Documentación REST de OficiosYa: autenticación, perfil, chat en tiempo real (HU-16, WebSocket /chat + long-polling), portafolio, búsqueda, solicitudes y reseñas.',
     )
     .setVersion('1.0')
     .addBearerAuth(
@@ -23,6 +23,7 @@ export function setupSwagger(app: INestApplication) {
     .addTag('Search', 'Búsqueda geográfica (HU-12) y motor indexado de perfiles (HU-10, HU-11)')
     .addTag('Requests', 'Solicitudes de servicio y máquina de estados (HU-13, HU-14, HU-15)')
     .addTag('Reviews', 'Reseñas de servicios y promedio de calificación (HU-18)')
+    .addTag('Chat', 'Mensajes de texto e imágenes en tiempo real (HU-16)')
     .addTag('Admin', 'Moderación de cuentas')
     .addTag('usuarios')
     .addTag('zonas')

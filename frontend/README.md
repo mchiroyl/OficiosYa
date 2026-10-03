@@ -9,6 +9,13 @@ npm run dev
 
 Abre http://localhost:5173. El backend debe estar en http://localhost:3000.
 
+## Chat (HU-16)
+
+Tras iniciar sesión, **Mensajes** abre `/chat`. Cada solicitud tiene un hilo en
+`/chat/:id`. El cliente intenta WebSocket (`socket.io`, namespace `/chat`) y, si
+falla, usa long-polling `GET /api/chat/threads/:id/poll`. Puedes enviar texto e
+imágenes. El proxy de Vite reenvía `/api` y `/socket.io` al puerto 3000.
+
 También puedes usar `start.bat`.
 
 ## Búsqueda y solicitudes (HU-10, HU-11, HU-13)

@@ -23,6 +23,9 @@ export default function TopBar({ mode, onModeChange }) {
               <Link to="/" className={styles.navLink}>
                 Inicio
               </Link>
+              <Link to="/chat" className={styles.navLink}>
+                Mensajes
+              </Link>
               <Link to="/worker/profile" className={styles.navLink}>
                 Mi perfil
               </Link>

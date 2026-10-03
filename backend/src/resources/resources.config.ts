@@ -24,6 +24,6 @@ export const RESOURCES: ResourceConfig[] = [
   { path: 'servicios', table: 'servicio_ofrecido', pk: 'id_servicio', publicRead: true },
   { path: 'solicitudes', table: 'solicitud_servicio', pk: 'id_solicitud', denyMutations: true },
   { path: 'cotizaciones', table: 'cotizacion_privada', pk: 'id_cotizacion' },
-  { path: 'mensajes', table: 'mensaje', pk: 'id_mensaje' },
+  { path: 'mensajes', table: 'mensaje', pk: 'id_mensaje', denyMutations: true },
   { path: 'resenas', table: 'resena', pk: 'id_resena', publicRead: true, denyMutations: true },
 ];

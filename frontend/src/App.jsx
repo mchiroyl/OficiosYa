@@ -8,6 +8,8 @@ import ResetPassword from './pages/ResetPassword';
 import Home from './pages/Home';
 import WorkerProfile from './pages/WorkerProfile';
 import PublicWorkerProfile from './pages/PublicWorkerProfile';
+import ChatInbox from './pages/ChatInbox';
+import ChatThread from './pages/ChatThread';
 import { Router, matchPath, useNavigate, usePath } from './router';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 
@@ -19,6 +21,7 @@ function AppRoutes({ mode, onModeChange }) {
   const navigate = useNavigate();
   const { ready, isAuthenticated } = useAuth();
   const publicWorkerParams = matchPath(PUBLIC_WORKER_PATTERN, path);
+  const chatThread = matchPath('/chat/:id', path);
 
   useEffect(() => {
     if (!ready) return;
@@ -53,6 +56,20 @@ function AppRoutes({ mode, onModeChange }) {
       return (
         <PageShell mode={mode} onModeChange={onModeChange}>
           <WorkerProfile />
+        </PageShell>
+      );
+    }
+    if (path === '/chat') {
+      return (
+        <PageShell mode={mode} onModeChange={onModeChange}>
+          <ChatInbox />
+        </PageShell>
+      );
+    }
+    if (chatThread) {
+      return (
+        <PageShell mode={mode} onModeChange={onModeChange}>
+          <ChatThread />
         </PageShell>
       );
     }

@@ -1,11 +1,13 @@
 import { useEffect, useRef, useState } from 'react';
 import { useAuth } from '../../auth/AuthContext';
 import { createRequest, listWorkerServices } from '../../api/requests';
+import { useNavigate } from '../../router';
 import ui from '../search/Search.module.css';
 import styles from './ServiceRequestModal.module.css';
 
 export default function ServiceRequestModal({ worker, onClose }) {
   const { session } = useAuth();
+  const navigate = useNavigate();
   const dialog = useRef(null);
   const sending = useRef(false);
   const [services, setServices] = useState(null);
@@ -121,7 +123,8 @@ export default function ServiceRequestModal({ worker, onClose }) {
         <p>Estado: <strong>{saved.estado}</strong></p>
         <p>{saved.servicio?.nombre || services?.find((item) => Number(item.id_servicio) === Number(form.id_servicio))?.nombre}</p>
         <p className={ui.hint}>Este registro aún no confirma una contratación ni una fecha de atención.</p>
-        <button type="button" className={ui.primary} onClick={close}>Volver a los resultados</button>
+        <button type="button" className={ui.primary} onClick={() => { const id = saved.id_solicitud; close(); navigate(`/chat/${id}`); }}>Abrir chat</button>
+        <button type="button" className={ui.secondary} onClick={close}>Volver a los resultados</button>
       </section> : <form onSubmit={submit} className={styles.form}>
         <p className={ui.hint}>Los campos con * son obligatorios.</p>
         {worker.disponibilidad === 'Ocupado' && <p className={ui.hint}>Este trabajador figura como ocupado; su disponibilidad debe confirmarse.</p>}

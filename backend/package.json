@@ -13,7 +13,9 @@
     "@nestjs/config": "^4.0.1",
     "@nestjs/core": "^11.0.12",
     "@nestjs/platform-express": "^11.0.12",
+    "@nestjs/platform-socket.io": "^11.2.7",
     "@nestjs/swagger": "^11.4.7",
+    "@nestjs/websockets": "^11.2.7",
     "@supabase/supabase-js": "^2.49.4",
     "bcryptjs": "^3.0.2",
     "class-transformer": "^0.5.1",
@@ -21,7 +23,8 @@
     "jose": "^6.0.10",
     "reflect-metadata": "^0.2.2",
     "rxjs": "^7.8.2",
-    "sharp": "^0.35.4"
+    "sharp": "^0.35.4",
+    "socket.io": "^4.8.4"
   },
   "devDependencies": {
     "@nestjs/cli": "^11.0.5",
