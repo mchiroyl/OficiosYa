@@ -7,6 +7,7 @@ export class ResourceService {
   constructor(private readonly supabase: SupabaseService) {}
 
   async findAll(config: ResourceConfig, query: Record<string, string>) {
+    this.assertReadable(config);
     let builder = this.supabase.from(config.table).select('*');
 
     for (const [key, value] of Object.entries(query)) {
@@ -32,6 +33,7 @@ export class ResourceService {
   }
 
   async findOne(config: ResourceConfig, keys: Record<string, string | number>) {
+    this.assertReadable(config);
     let builder = this.supabase.from(config.table).select('*');
     for (const [key, value] of Object.entries(keys)) {
       builder = builder.eq(key, value);
@@ -107,6 +109,12 @@ export class ResourceService {
     return { message: 'Recurso eliminado.' };
   }
 
+  private assertReadable(config: ResourceConfig) {
+    if (config.table === 'reporte') {
+      throw new ForbiddenException('Consulta las denuncias en GET /api/admin/reports.');
+    }
+  }
+
   private assertWritable(config: ResourceConfig) {
     if (!config.denyMutations) return;
     if (config.table === 'solicitud_servicio') {
@@ -116,6 +124,11 @@ export class ResourceService {
     }
     if (config.table === 'resena') {
       throw new ForbiddenException('Las reseñas se crean con POST /api/reviews/create.');
+    }
+    if (config.table === 'reporte') {
+      throw new ForbiddenException(
+        'Los reportes se crean con POST /api/reports/create y se gestionan en /api/admin/reports.',
+      );
     }
     if (config.table === 'mensaje') {
       throw new ForbiddenException(

@@ -21,6 +21,7 @@ import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResendVerificationDto, VerifyEmailDto } from './dto/verify-email.dto';
+import { correoEsAdmin } from './admin-emails';
 import { MailSimulatorService } from './recovery/mail-simulator.service';
 import { RecoveryTokenStore } from './recovery/recovery-token.store';
 
@@ -86,6 +87,7 @@ export class AuthService {
         tienePerfilTrabajador: Boolean(await this.findPerfil(usuario.id_usuario)),
         perfilTrabajador: await this.findPerfil(usuario.id_usuario),
         needsLogin: true,
+        es_admin: this.esAdmin(usuario),
         message: 'Cuenta creada exitosamente. Inicia sesión para continuar.',
       };
     }
@@ -151,6 +153,7 @@ export class AuthService {
       user: publicUsuario(usuario),
       tienePerfilTrabajador: Boolean(perfil),
       perfilTrabajador: perfil,
+      es_admin: this.esAdmin(usuario),
     };
   }
 
@@ -609,7 +612,12 @@ export class AuthService {
       rememberMe,
       tienePerfilTrabajador: Boolean(perfil),
       perfilTrabajador: perfil,
+      es_admin: this.esAdmin(usuario),
     };
+  }
+
+  esAdmin(usuario: UsuarioRow) {
+    return correoEsAdmin(usuario.correo, this.config.get<string>('ADMIN_EMAILS'));
   }
 
   private sessionPayload(session: {

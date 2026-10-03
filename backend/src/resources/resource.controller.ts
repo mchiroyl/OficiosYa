@@ -95,6 +95,11 @@ function assertWritable(config: ResourceConfig) {
   if (config.table === 'resena') {
     throw new ForbiddenException('Las reseñas se crean con POST /api/reviews/create.');
   }
+  if (config.table === 'reporte') {
+    throw new ForbiddenException(
+      'Los reportes se crean con POST /api/reports/create y se gestionan en /api/admin/reports.',
+    );
+  }
   if (config.table === 'mensaje') {
     throw new ForbiddenException(
       'Los mensajes se envían por POST /api/chat/threads/:id/messages o el WebSocket /chat.',

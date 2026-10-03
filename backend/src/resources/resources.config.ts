@@ -18,7 +18,7 @@ export const RESOURCES: ResourceConfig[] = [
   { path: 'perfiles-trabajador', table: 'perfil_trabajador', pk: 'id_perfil' },
   { path: 'perfiles-zona', table: 'perfil_zona', pk: ['id_perfil', 'id_zona'] },
   { path: 'portafolio', table: 'portafolio', pk: 'id_elemento' },
-  { path: 'reportes', table: 'reporte', pk: 'id_reporte' },
+  { path: 'reportes', table: 'reporte', pk: 'id_reporte', denyMutations: true },
   { path: 'bitacora', table: 'bitacora', pk: 'id_evento' },
   { path: 'categorias', table: 'categoria', pk: 'id_categoria', publicRead: true },
   { path: 'servicios', table: 'servicio_ofrecido', pk: 'id_servicio', publicRead: true },

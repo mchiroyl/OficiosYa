@@ -1,6 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useAuth } from '../auth/AuthContext';
 import { api } from '../api/client';
+import { createReport } from '../api/reports';
 import { searchProfiles } from '../api/search';
 import Logo from '../components/Logo';
 import SearchFilters, { DEFAULT_FILTERS } from '../components/search/SearchFilters';
@@ -14,7 +15,7 @@ const money = (amount) => new Intl.NumberFormat('es-GT', { style: 'currency', cu
 const RATE_LABELS = { por_hora: 'Por hora', por_servicio: 'Por servicio', a_convenir: 'A convenir' };
 
 export default function Home() {
-  const { logout, user } = useAuth();
+  const { logout, user, session, isAdmin } = useAuth();
   const [draft, setDraft] = useState({ ...DEFAULT_FILTERS });
   const [query, setQuery] = useState({ ...DEFAULT_FILTERS, offset: 0 });
   const [zones, setZones] = useState(null);
@@ -79,6 +80,7 @@ export default function Home() {
         <div className={styles.brand}><Logo variant="compact" /><span>Oficios<span className={styles.brandAccent}>YA</span></span></div>
         <nav className={styles.nav} aria-label="Cuenta">
           <Link to="/chat">Mensajes</Link>
+          {isAdmin ? <Link to="/admin/reports">Moderación</Link> : null}
           <Link to="/worker/profile">Mi perfil de trabajador</Link>
           <button type="button" className={ui.textButton} onClick={() => logout()}>Cerrar sesión</button>
         </nav>
@@ -118,6 +120,24 @@ export default function Home() {
                 <p className={styles.coverage}>Cobertura: {worker.cobertura?.map((zone) => zone.nombre).join(', ') || 'Por consultar'}</p>
                 <div className={styles.cardBottom}><p className={styles.price}>{worker.tarifas?.monto_desde != null ? <>Desde <strong>{money(worker.tarifas.monto_desde)}</strong>{RATE_LABELS[worker.tarifas.tipo] && <small>{RATE_LABELS[worker.tarifas.tipo]}</small>}</> : 'Tarifa por consultar'}</p>
                   <button type="button" className={ui.primary} disabled={own} onClick={() => setSelected(worker)}>{own ? 'Este es tu perfil' : 'Solicitar servicio'}</button>
+                  {!own && (
+                    <button
+                      type="button"
+                      className={ui.textButton}
+                      onClick={async () => {
+                        const motivo = window.prompt(`Describe el motivo para denunciar a ${worker.nombre} (mínimo 10 caracteres).`);
+                        if (!motivo || motivo.trim().length < 10) return;
+                        try {
+                          await createReport({ tipo_recurso: 'usuario', id_recurso: worker.id_usuario, motivo: motivo.trim() }, session?.accessToken);
+                          window.alert('La denuncia quedó registrada para moderación.');
+                        } catch (err) {
+                          window.alert(err.message || 'No se pudo enviar la denuncia.');
+                        }
+                      }}
+                    >
+                      Denunciar cuenta
+                    </button>
+                  )}
                 </div>
               </article>;
             })}</div>}

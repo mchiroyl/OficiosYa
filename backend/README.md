@@ -16,6 +16,8 @@ npm run dev
 - Modelo de datos: [docs/05_Modelo_Datos_Inicial.md](docs/05_Modelo_Datos_Inicial.md)
 - ERD conceptual y físico: [docs/01_Diagrama_Entidad_Relacion_ERD_Conceptual_y_Fisico.png](docs/01_Diagrama_Entidad_Relacion_ERD_Conceptual_y_Fisico.png) / [PDF](docs/01_Diagrama_Entidad_Relacion_ERD_Conceptual_y_Fisico.pdf)
 
+Identidad y moderación (HU-20, HU-21): `POST /api/identity/dpi` recibe frente y reverso del DPI en un bucket privado (`SUPABASE_IDENTITY_BUCKET=identidad`). El número se guarda enmascarado y con hash; las fotos solo se ven con URL firmada (10 min). `GET/PATCH /api/admin/reports` lista y resuelve denuncias (`RESUELTO`/`RECHAZADO`, con opción de suspender la cuenta). Pon tu correo en `ADMIN_EMAILS` para usar Moderación.
+
 Chat (HU-16): WebSocket Socket.IO en el namespace `/chat` (JWT en `auth.token`). REST: `GET /api/chat/conversations`, `GET /api/chat/threads/:id/messages`, `POST /api/chat/threads/:id/messages` (texto), `POST /api/chat/threads/:id/images` (imagen + sharp + Storage). Long-polling de respaldo: `GET /api/chat/threads/:id/poll?after=&timeout=25`. Solo participan el cliente y el trabajador de la solicitud. Las altas genéricas a `/api/mensajes` están bloqueadas.
 
 Recuperación de acceso (HU-03): `POST /api/auth/forgot-password` emite un token temporal (32 bytes, un solo uso) y un código de 6 dígitos, y **simula** el envío en la consola del API. `POST /api/auth/reset-password` consume el token o el código. TTL: `RESET_TOKEN_TTL_MINUTES` (15). En local, `RECOVERY_SIMULATION_EXPOSE=true` incluye código y enlace en la respuesta para probar sin SMTP.

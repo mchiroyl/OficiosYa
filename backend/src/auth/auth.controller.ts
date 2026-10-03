@@ -34,6 +34,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { UpdateEstadoDto } from './dto/update-estado.dto';
 import { ResendVerificationDto, VerifyEmailDto } from './dto/verify-email.dto';
+import { AdminGuard } from './admin.guard';
 import { JwtAuthGuard } from './jwt-auth.guard';
 
 @ApiTags('Auth')
@@ -157,10 +158,10 @@ export class AuthController {
   }
 
   @Patch('admin/usuarios/:id/estado')
-  @UseGuards(JwtAuthGuard)
+  @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth('access-token')
   @ApiTags('Admin')
-  @ApiOperation({ summary: 'Cambiar el estado de un usuario' })
+  @ApiOperation({ summary: 'Cambiar el estado de un usuario (solo moderación)' })
   updateEstado(
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateEstadoDto,

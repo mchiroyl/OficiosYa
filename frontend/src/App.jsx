@@ -10,6 +10,7 @@ import WorkerProfile from './pages/WorkerProfile';
 import PublicWorkerProfile from './pages/PublicWorkerProfile';
 import ChatInbox from './pages/ChatInbox';
 import ChatThread from './pages/ChatThread';
+import AdminReports from './pages/AdminReports';
 import { Router, matchPath, useNavigate, usePath } from './router';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 
@@ -56,6 +57,13 @@ function AppRoutes({ mode, onModeChange }) {
       return (
         <PageShell mode={mode} onModeChange={onModeChange}>
           <WorkerProfile />
+        </PageShell>
+      );
+    }
+    if (path === '/admin/reports') {
+      return (
+        <PageShell mode={mode} onModeChange={onModeChange}>
+          <AdminReports />
         </PageShell>
       );
     }

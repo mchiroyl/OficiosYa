@@ -3,6 +3,7 @@ import BackLink from '../components/BackLink';
 import Button from '../components/ui/Button';
 import Checkbox from '../components/ui/Checkbox';
 import { useAuth } from '../auth/AuthContext';
+import { getMyDpi, submitDpi } from '../api/identity';
 import { getWorkerProfile, listZonas, updateWorkerAvailability, updateWorkerProfile } from '../api/worker';
 import styles from './WorkerProfile.module.css';
 
@@ -56,6 +57,11 @@ export default function WorkerProfile() {
   const [horarios, setHorarios] = useState([]);
   const [disponibilidad, setDisponibilidad] = useState('Disponible');
   const [toggling, setToggling] = useState(false);
+  const [dpi, setDpi] = useState(null);
+  const [frente, setFrente] = useState(null);
+  const [reverso, setReverso] = useState(null);
+  const [numeroDpi, setNumeroDpi] = useState('');
+  const [dpiSaving, setDpiSaving] = useState(false);
 
   const showMontos = tarifas.tipo !== 'a_convenir';
 
@@ -66,9 +72,10 @@ export default function WorkerProfile() {
       setLoading(true);
       setError('');
       try {
-        const [profile, zonasData] = await Promise.all([
+        const [profile, zonasData, dpiData] = await Promise.all([
           getWorkerProfile(token),
           listZonas(),
+          getMyDpi(token).catch(() => null),
         ]);
 
         if (cancelled) return;
@@ -93,6 +100,7 @@ export default function WorkerProfile() {
           })),
         );
         setDisponibilidad(profile.disponibilidad === 'Ocupado' ? 'Ocupado' : 'Disponible');
+        setDpi(dpiData);
 
         try {
           const raw = sessionStorage.getItem('oficiosya.registerSuccess');
@@ -151,6 +159,34 @@ export default function WorkerProfile() {
       setError(err.message || 'No se pudo cambiar la disponibilidad.');
     } finally {
       setToggling(false);
+    }
+  };
+
+  const handleDpi = async () => {
+    setError('');
+    setSuccess('');
+    if (!frente || !reverso) {
+      setError('Adjunta el frente y el reverso de tu DPI.');
+      return;
+    }
+    if (numeroDpi && !/^\d{13}$/.test(numeroDpi.replace(/\D/g, ''))) {
+      setError('El número de DPI debe tener 13 dígitos.');
+      return;
+    }
+    setDpiSaving(true);
+    try {
+      const saved = await submitDpi(
+        { frente, reverso, numero_dpi: numeroDpi.replace(/\D/g, '') || undefined },
+        token,
+      );
+      setDpi(saved);
+      setFrente(null);
+      setReverso(null);
+      setSuccess('Documentos enviados. Quedan en revisión privada.');
+    } catch (err) {
+      setError(err.message || 'No se pudieron enviar los documentos.');
+    } finally {
+      setDpiSaving(false);
     }
   };
 
@@ -259,6 +295,78 @@ export default function WorkerProfile() {
                 onClick={handleAvailability}
               >
                 {disponibilidad === 'Disponible' ? 'Marcar como Ocupado' : 'Marcar como Disponible'}
+              </Button>
+            </section>
+
+            <section>
+              <h2 className={styles.sectionTitle}>Verificación de identidad (DPI)</h2>
+              <p className={styles.hint}>
+                El frente y el reverso se guardan en un bucket privado. El número no se almacena
+                completo. Estado:{' '}
+                <strong>
+                  {dpi?.verificado
+                    ? 'Verificado'
+                    : dpi?.dpi?.estado === 'pendiente'
+                      ? 'En revisión'
+                      : dpi?.dpi?.estado === 'rechazado'
+                        ? `Rechazado${dpi.dpi.motivo_rechazo ? `: ${dpi.dpi.motivo_rechazo}` : ''}`
+                        : 'Sin documentos'}
+                </strong>
+              </p>
+              {dpi?.dpi?.numero_enmascarado ? (
+                <p className={styles.message}>DPI {dpi.dpi.numero_enmascarado}</p>
+              ) : null}
+              <div className={styles.row}>
+                <div>
+                  <label className={styles.fieldLabel} htmlFor="dpi-frente">
+                    Frente
+                  </label>
+                  <input
+                    id="dpi-frente"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className={styles.input}
+                    disabled={dpiSaving || saving}
+                    onChange={(e) => setFrente(e.target.files?.[0] || null)}
+                  />
+                </div>
+                <div>
+                  <label className={styles.fieldLabel} htmlFor="dpi-reverso">
+                    Reverso
+                  </label>
+                  <input
+                    id="dpi-reverso"
+                    type="file"
+                    accept="image/jpeg,image/png,image/webp,image/gif"
+                    className={styles.input}
+                    disabled={dpiSaving || saving}
+                    onChange={(e) => setReverso(e.target.files?.[0] || null)}
+                  />
+                </div>
+              </div>
+              <div>
+                <label className={styles.fieldLabel} htmlFor="dpi-numero">
+                  Número de DPI (opcional)
+                </label>
+                <input
+                  id="dpi-numero"
+                  className={styles.input}
+                  inputMode="numeric"
+                  maxLength={13}
+                  placeholder="13 dígitos"
+                  value={numeroDpi}
+                  disabled={dpiSaving || saving}
+                  onChange={(e) => setNumeroDpi(e.target.value.replace(/\D/g, '').slice(0, 13))}
+                />
+              </div>
+              <Button
+                type="button"
+                variant="outline"
+                loading={dpiSaving}
+                disabled={dpiSaving || saving}
+                onClick={handleDpi}
+              >
+                Enviar documentos
               </Button>
             </section>
 

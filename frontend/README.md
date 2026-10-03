@@ -9,6 +9,12 @@ npm run dev
 
 Abre http://localhost:5173. El backend debe estar en http://localhost:3000.
 
+## Moderación (HU-20, HU-21)
+
+En el perfil de trabajador puedes enviar frente y reverso del DPI. El equipo de
+moderación (correo en `ADMIN_EMAILS` del backend) ve **Moderación** en
+`/admin/reports`. Desde el catálogo, **Denunciar cuenta** crea un reporte.
+
 ## Chat (HU-16)
 
 Tras iniciar sesión, **Mensajes** abre `/chat`. Cada solicitud tiene un hilo en

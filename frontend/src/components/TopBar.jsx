@@ -5,7 +5,7 @@ import { Link } from '../router';
 import styles from './TopBar.module.css';
 
 export default function TopBar({ mode, onModeChange }) {
-  const { isAuthenticated, logout } = useAuth();
+  const { isAuthenticated, isAdmin, logout } = useAuth();
 
   return (
     <header className={styles.bar}>
@@ -26,6 +26,11 @@ export default function TopBar({ mode, onModeChange }) {
               <Link to="/chat" className={styles.navLink}>
                 Mensajes
               </Link>
+              {isAdmin ? (
+                <Link to="/admin/reports" className={styles.navLink}>
+                  Moderación
+                </Link>
+              ) : null}
               <Link to="/worker/profile" className={styles.navLink}>
                 Mi perfil
               </Link>

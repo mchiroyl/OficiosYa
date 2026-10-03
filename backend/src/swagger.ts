@@ -24,6 +24,8 @@ export function setupSwagger(app: INestApplication) {
     .addTag('Requests', 'Solicitudes de servicio y máquina de estados (HU-13, HU-14, HU-15)')
     .addTag('Reviews', 'Reseñas de servicios y promedio de calificación (HU-18)')
     .addTag('Chat', 'Mensajes de texto e imágenes en tiempo real (HU-16)')
+    .addTag('Identity', 'Recepción segura de DPI (HU-20)')
+    .addTag('Reports', 'Denuncias de cuentas y recursos (HU-21)')
     .addTag('Admin', 'Moderación de cuentas')
     .addTag('usuarios')
     .addTag('zonas')

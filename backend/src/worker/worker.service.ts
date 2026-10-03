@@ -74,6 +74,7 @@ export class WorkerService {
         horarios: nextHorarios,
         reputacion: extras.reputacion,
         total_resenas: extras.total_resenas,
+        dpi: extras.dpi,
       }),
       experiencia: dto.experiencia !== undefined ? dto.experiencia : existing?.experiencia || null,
       disponibilidad: normalizeDisponibilidad(existing?.disponibilidad),

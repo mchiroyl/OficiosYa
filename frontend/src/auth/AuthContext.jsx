@@ -26,6 +26,7 @@ export function AuthProvider({ children }) {
       expiresAt: data.tokens.expiresAt,
       tienePerfilTrabajador: data.tienePerfilTrabajador,
       perfilTrabajador: data.perfilTrabajador,
+      es_admin: Boolean(data.es_admin),
     };
     persist(next, rememberMe);
     return next;
@@ -66,6 +67,7 @@ export function AuthProvider({ children }) {
             user: me.user,
             tienePerfilTrabajador: me.tienePerfilTrabajador,
             perfilTrabajador: me.perfilTrabajador,
+            es_admin: Boolean(me.es_admin),
           },
           stored.rememberMe ?? sessionUsesRemember(),
         );
@@ -141,6 +143,7 @@ export function AuthProvider({ children }) {
       session,
       user: session?.user || null,
       isAuthenticated: Boolean(session?.accessToken),
+      isAdmin: Boolean(session?.es_admin),
       login,
       register,
       logout,
