@@ -61,7 +61,7 @@ export class SearchIndexService {
   }
 
   private async searchViaRpc(dto: SearchProfilesDto) {
-    const { data, error } = await this.supabase.admin.rpc('buscar_perfiles_indexados', {
+    const args: Record<string, unknown> = {
       p_q: dto.q?.trim() || null,
       p_id_zona: dto.id_zona ?? null,
       p_zona: dto.zona?.trim() || null,
@@ -73,7 +73,10 @@ export class SearchIndexService {
       p_limit: dto.limit ?? 20,
       p_offset: dto.offset ?? 0,
       p_orden: dto.orden || 'relevancia',
-    });
+    };
+    if (dto.id_categoria != null) args.p_id_categoria = dto.id_categoria;
+
+    const { data, error } = await this.supabase.admin.rpc('buscar_perfiles_indexados', args);
 
     if (error) {
       if (this.isMissingRpc(error.message)) {
@@ -110,6 +113,22 @@ export class SearchIndexService {
         .in('id_zona', zoneIds);
       if (error) throw new BadRequestException(error.message);
       perfilIds = [...new Set((links || []).map((row: { id_perfil: number }) => row.id_perfil))];
+      if (!perfilIds.length) {
+        return { motor: 'consultas-indexadas', consulta: this.consulta(dto), total: 0, perfiles: [] };
+      }
+    }
+
+    if (dto.id_categoria != null) {
+      const { data: servicios, error: servicioError } = await this.supabase
+        .from('servicio_ofrecido')
+        .select('id_perfil')
+        .eq('id_categoria', dto.id_categoria)
+        .eq('activo', true);
+      if (servicioError) throw new BadRequestException(servicioError.message);
+      const deCategoria = new Set(
+        (servicios || []).map((row: { id_perfil: number }) => row.id_perfil),
+      );
+      perfilIds = (perfilIds || [...deCategoria]).filter((id) => deCategoria.has(id));
       if (!perfilIds.length) {
         return { motor: 'consultas-indexadas', consulta: this.consulta(dto), total: 0, perfiles: [] };
       }
@@ -238,6 +257,7 @@ export class SearchIndexService {
   private consulta(dto: SearchProfilesDto) {
     return {
       q: dto.q?.trim() || null,
+      id_categoria: dto.id_categoria ?? null,
       id_zona: dto.id_zona ?? null,
       zona: dto.zona?.trim() || null,
       disponibilidad: dto.disponibilidad || 'Disponible',

@@ -18,6 +18,16 @@ export class SearchProfilesDto {
   @Min(1)
   id_zona?: number;
 
+  @ApiPropertyOptional({
+    example: 3,
+    description: 'Filtra profesionales con un servicio activo en esta categoría.',
+  })
+  @IsOptional()
+  @Type(() => Number)
+  @IsInt()
+  @Min(1)
+  id_categoria?: number;
+
   @ApiPropertyOptional({ example: 'Zona 10' })
   @IsOptional()
   @IsString()

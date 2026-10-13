@@ -139,6 +139,10 @@ CREATE INDEX IF NOT EXISTS idx_servicio_perfil_activo
   ON servicio_ofrecido (id_perfil)
   WHERE activo = true;
 
+DROP FUNCTION IF EXISTS buscar_perfiles_indexados(
+  text, integer, text, text, numeric, numeric, numeric, boolean, integer, integer, text
+);
+
 CREATE OR REPLACE FUNCTION buscar_perfiles_indexados(
   p_q text DEFAULT NULL,
   p_id_zona integer DEFAULT NULL,
@@ -150,7 +154,8 @@ CREATE OR REPLACE FUNCTION buscar_perfiles_indexados(
   p_verificado boolean DEFAULT NULL,
   p_limit integer DEFAULT 20,
   p_offset integer DEFAULT 0,
-  p_orden text DEFAULT 'relevancia'
+  p_orden text DEFAULT 'relevancia',
+  p_id_categoria integer DEFAULT NULL
 )
 RETURNS TABLE (
   id_perfil integer,
@@ -194,7 +199,8 @@ AS $$
       p_verificado AS verificado,
       greatest(1, least(coalesce(p_limit, 20), 50)) AS lim,
       greatest(0, coalesce(p_offset, 0)) AS off,
-      lower(coalesce(NULLIF(btrim(p_orden), ''), 'relevancia')) AS orden
+      lower(coalesce(NULLIF(btrim(p_orden), ''), 'relevancia')) AS orden,
+      p_id_categoria AS id_categoria
   ),
   reputacion AS (
     SELECT
@@ -267,6 +273,16 @@ AS $$
         )
       )
       AND (
+        prm.id_categoria IS NULL
+        OR EXISTS (
+          SELECT 1
+          FROM servicio_ofrecido s
+          WHERE s.id_perfil = p.id_perfil
+            AND s.activo = true
+            AND s.id_categoria = prm.id_categoria
+        )
+      )
+      AND (
         prm.id_zona IS NULL AND prm.zona IS NULL
         OR EXISTS (
           SELECT 1
@@ -298,7 +314,7 @@ AS $$
 $$;
 
 GRANT EXECUTE ON FUNCTION buscar_perfiles_indexados(
-  text, integer, text, text, numeric, numeric, numeric, boolean, integer, integer, text
+  text, integer, text, text, numeric, numeric, numeric, boolean, integer, integer, text, integer
 ) TO anon, authenticated, service_role;
 
 NOTIFY pgrst, 'reload schema';
