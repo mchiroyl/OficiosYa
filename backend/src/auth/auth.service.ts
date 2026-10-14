@@ -1,6 +1,7 @@
 import {
   BadRequestException,
   ConflictException,
+  ForbiddenException,
   Injectable,
   UnauthorizedException,
 } from '@nestjs/common';
@@ -22,6 +23,7 @@ import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResendVerificationDto, VerifyEmailDto } from './dto/verify-email.dto';
 import { correoEsAdmin } from './admin-emails';
+import { AccionSancion } from './dto/sancion-cuenta.dto';
 import { MailSimulatorService } from './recovery/mail-simulator.service';
 import { RecoveryTokenStore } from './recovery/recovery-token.store';
 
@@ -353,18 +355,67 @@ export class AuthService {
     return { user: publicUsuario(updated), message: 'La cuenta fue eliminada.' };
   }
 
-  async updateEstado(idUsuario: number, estado: string) {
+  async updateEstado(admin: UsuarioRow, idUsuario: number, estado: string) {
+    const accion: AccionSancion =
+      estado === 'ACTIVO' ? 'reactivar' : estado === 'SUSPENDIDO' ? 'suspender' : 'banear';
+    return this.sancionar(admin, idUsuario, accion);
+  }
+
+  async sancionar(admin: UsuarioRow, idUsuario: number, accion: AccionSancion, motivo?: string) {
+    if (admin.id_usuario === idUsuario) {
+      throw new ForbiddenException('No puedes sancionarte a ti mismo.');
+    }
+
     const usuario = await this.findUsuarioById(idUsuario);
     if (!usuario) {
       throw new BadRequestException('Usuario no encontrado.');
     }
+    if (this.esAdmin(usuario)) {
+      throw new ForbiddenException('No puedes sancionar a otro administrador.');
+    }
 
+    if (accion === 'suspender') {
+      if (usuario.estado === 'ELIMINADO') {
+        throw new BadRequestException('La cuenta está baneada. No se puede suspender.');
+      }
+      if (usuario.estado === 'SUSPENDIDO') {
+        throw new ConflictException('La cuenta ya está suspendida.');
+      }
+    }
+    if (accion === 'banear') {
+      if (usuario.estado === 'ELIMINADO') {
+        throw new ConflictException('La cuenta ya está baneada.');
+      }
+    }
+    if (accion === 'reactivar') {
+      if (usuario.estado === 'ELIMINADO') {
+        throw new BadRequestException('Una cuenta baneada no se puede reactivar.');
+      }
+      if (usuario.estado === 'ACTIVO' && usuario.modo_activo) {
+        throw new ConflictException('La cuenta ya está activa.');
+      }
+    }
+
+    const estado = accion === 'reactivar' ? 'ACTIVO' : accion === 'suspender' ? 'SUSPENDIDO' : 'ELIMINADO';
     const updated = await this.patchUsuario(idUsuario, {
       estado,
-      modo_activo: estado === 'ACTIVO',
+      modo_activo: accion === 'reactivar',
     });
-    await this.registrarBitacora(idUsuario, 'ADMIN_ESTADO', 'usuario');
-    return { user: publicUsuario(updated) };
+    const bitacora =
+      accion === 'suspender' ? 'ADMIN_SUSPENDER' : accion === 'banear' ? 'ADMIN_BANEAR' : 'ADMIN_REACTIVAR';
+    await this.registrarBitacora(admin.id_usuario, bitacora, 'usuario');
+
+    return {
+      user: publicUsuario(updated),
+      accion,
+      motivo: motivo?.trim() || null,
+      message:
+        accion === 'suspender'
+          ? 'La cuenta fue suspendida.'
+          : accion === 'banear'
+            ? 'La cuenta fue baneada.'
+            : 'La cuenta fue reactivada.',
+    };
   }
 
   async findUsuarioByCorreo(correo: string): Promise<UsuarioRow | null> {

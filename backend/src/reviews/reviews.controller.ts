@@ -36,7 +36,14 @@ export class ReviewsController {
   }
 
   @Put(':id/reply')
-  @ApiOperation({ summary: 'Responder una única vez a una reseña propia' })
+  @ApiOperation({
+    summary: 'Responder una reseña recibida (HU-19)',
+    description:
+      'El trabajador dueño de la reseña publica una sola respuesta. Queda visible en el perfil. Un segundo intento responde 409.',
+  })
+  @ApiResponse({ status: 200, description: 'Respuesta pública guardada.' })
+  @ApiResponse({ status: 403, description: 'La reseña no es de este trabajador.' })
+  @ApiResponse({ status: 409, description: 'La reseña ya tiene una respuesta.' })
   reply(
     @CurrentUser() user: UsuarioRow,
     @Param('id', ParseIntPipe) id: number,

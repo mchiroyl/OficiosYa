@@ -32,6 +32,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { SancionCuentaDto } from './dto/sancion-cuenta.dto';
 import { UpdateEstadoDto } from './dto/update-estado.dto';
 import { ResendVerificationDto, VerifyEmailDto } from './dto/verify-email.dto';
 import { AdminGuard } from './admin.guard';
@@ -157,15 +158,37 @@ export class AuthController {
     return this.authService.deleteAccount(user);
   }
 
+  @Patch('admin/usuarios/:id/sancion')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth('access-token')
+  @ApiTags('Admin')
+  @ApiOperation({
+    summary: 'Suspender, banear o reactivar una cuenta (HU-22)',
+    description:
+      'suspender deja la cuenta en SUSPENDIDO y se puede reactivar. banear la deja en ELIMINADO de forma permanente. No aplica sobre la propia cuenta ni sobre otro administrador.',
+  })
+  sancionar(
+    @CurrentUser() admin: UsuarioRow,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: SancionCuentaDto,
+  ) {
+    return this.authService.sancionar(admin, id, dto.accion, dto.motivo);
+  }
+
   @Patch('admin/usuarios/:id/estado')
   @UseGuards(JwtAuthGuard, AdminGuard)
   @ApiBearerAuth('access-token')
   @ApiTags('Admin')
-  @ApiOperation({ summary: 'Cambiar el estado de un usuario (solo moderación)' })
+  @ApiOperation({
+    summary: 'Cambiar el estado de un usuario (HU-22)',
+    description:
+      'ACTIVO reactiva una suspensión. SUSPENDIDO suspende. ELIMINADO banea la cuenta. Misma regla que /admin/usuarios/{id}/sancion.',
+  })
   updateEstado(
+    @CurrentUser() admin: UsuarioRow,
     @Param('id', ParseIntPipe) id: number,
     @Body() dto: UpdateEstadoDto,
   ) {
-    return this.authService.updateEstado(id, dto.estado);
+    return this.authService.updateEstado(admin, id, dto.estado);
   }
 }

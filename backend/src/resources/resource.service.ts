@@ -152,8 +152,18 @@ export class ResourceService {
 
   private stripHidden(config: ResourceConfig, body: Record<string, unknown>) {
     const copy = { ...body };
-    for (const field of config.hiddenFields || []) {
-      delete copy[field];
+    const protectedFields = new Set(config.protectedFields || []);
+    let removedProtected = false;
+    for (const field of [...(config.hiddenFields || []), ...protectedFields]) {
+      if (field in copy) {
+        if (protectedFields.has(field)) removedProtected = true;
+        delete copy[field];
+      }
+    }
+    if (!Object.keys(copy).length && removedProtected) {
+      throw new BadRequestException(
+        'El estado de una cuenta solo cambia con PATCH /api/admin/usuarios/{id}/sancion.',
+      );
     }
     return copy;
   }

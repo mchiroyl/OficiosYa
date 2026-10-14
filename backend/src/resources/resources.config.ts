@@ -4,6 +4,8 @@ export type ResourceConfig = {
   pk: string | string[];
   publicRead?: boolean;
   hiddenFields?: string[];
+  /** Campos que no se pueden escribir por el CRUD genérico. */
+  protectedFields?: string[];
   denyMutations?: boolean;
 };
 
@@ -13,6 +15,7 @@ export const RESOURCES: ResourceConfig[] = [
     table: 'usuario',
     pk: 'id_usuario',
     hiddenFields: ['password_hash'],
+    protectedFields: ['password_hash', 'estado', 'modo_activo'],
   },
   { path: 'zonas', table: 'zona', pk: 'id_zona', publicRead: true },
   { path: 'perfiles-trabajador', table: 'perfil_trabajador', pk: 'id_perfil' },

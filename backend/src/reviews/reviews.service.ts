@@ -75,23 +75,53 @@ export class ReviewsService {
   }
 
   async reply(usuario: UsuarioRow, idResena: number, respuesta: string) {
+    const texto = respuesta.trim();
+    if (texto.length < 2) {
+      throw new BadRequestException('La respuesta debe tener al menos 2 caracteres.');
+    }
+
     const { data: perfil, error: profileError } = await this.supabase
-      .from('perfil_trabajador').select('id_perfil').eq('id_usuario', usuario.id_usuario).maybeSingle();
+      .from('perfil_trabajador')
+      .select('id_perfil')
+      .eq('id_usuario', usuario.id_usuario)
+      .maybeSingle();
     if (profileError) throw new BadRequestException(profileError.message);
     if (!perfil) throw new ForbiddenException('Necesitas un perfil de trabajador.');
+
     const { data: review, error: readError } = await this.supabase
-      .from('resena').select('*').eq('id_resena', idResena).maybeSingle();
+      .from('resena')
+      .select('*')
+      .eq('id_resena', idResena)
+      .maybeSingle();
     if (readError) throw new BadRequestException(readError.message);
     if (!review) throw new NotFoundException('La reseña no existe.');
     if (Number(review.id_trabajador) !== Number(perfil.id_perfil)) {
       throw new ForbiddenException('No puedes responder esta reseña.');
     }
-    if (review.respuesta) throw new ConflictException('Esta reseña ya tiene una respuesta.');
+    if (String(review.respuesta || '').trim()) {
+      throw new ConflictException('Esta reseña ya tiene una respuesta.');
+    }
+
     const { data, error } = await this.supabase
-      .from('resena').update({ respuesta: respuesta.trim() }).eq('id_resena', idResena).select('*').single();
-    if (error || !data) throw new BadRequestException(error?.message || 'No se guardó la respuesta.');
+      .from('resena')
+      .update({ respuesta: texto })
+      .eq('id_resena', idResena)
+      .eq('id_trabajador', perfil.id_perfil)
+      .is('respuesta', null)
+      .select('*')
+      .maybeSingle();
+    if (error) {
+      if (/REPLY_ONCE|ya tiene una respuesta/i.test(error.message)) {
+        throw new ConflictException('Esta reseña ya tiene una respuesta.');
+      }
+      throw new BadRequestException(error.message);
+    }
+    if (!data) {
+      throw new ConflictException('Esta reseña ya tiene una respuesta.');
+    }
+
     await this.registrarBitacora(usuario.id_usuario, 'REPLY_REVIEW', 'resena');
-    return { ...this.present(data as ResenaRow), respuesta_trabajador: data.respuesta };
+    return this.present(data as ResenaRow);
   }
 
   private present(row: ResenaRow) {
