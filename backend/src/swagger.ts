@@ -27,6 +27,7 @@ export function setupSwagger(app: INestApplication) {
     .addTag('Identity', 'Recepción segura de DPI (HU-20)')
     .addTag('Reports', 'Denuncias de cuentas y recursos (HU-21)')
     .addTag('Admin', 'Moderación de cuentas')
+    .addTag('Metrics', 'Indicadores agregados de la plataforma (HU-23)')
     .addTag('usuarios')
     .addTag('zonas')
     .addTag('perfiles-trabajador')
