@@ -68,18 +68,15 @@ export default function AppHeader() {
               <Link to="/chat" className={linkClass('/chat')}>
                 Chat
               </Link>
-              <Link to="/worker/profile" className={linkClass('/worker/profile')}>
-                Mi oferta
+              <Link to="/worker/content" className={linkClass('/worker/content')}>
+                Mi oferta y contenido
               </Link>
               <Link to="/worker/my-profile" className={linkClass('/worker/my-profile')}>
                 Perfil
               </Link>
-              <Link to="/worker/content" className={linkClass('/worker/content')}>
-                Contenido
-              </Link>
               {!hasWorkerProfile && (
-                <Link to="/worker/profile" className={styles.hint}>
-                  Completar perfil
+                <Link to="/worker/content" className={styles.hint}>
+                  Configurar servicios
                 </Link>
               )}
             </>

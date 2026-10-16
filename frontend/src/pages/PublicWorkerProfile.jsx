@@ -12,6 +12,7 @@ import { listWorkerServices } from '../api/requests';
 import { listReviews } from '../api/reviews';
 import { useAuth } from '../auth/AuthContext';
 import styles from './PublicWorkerProfile.module.css';
+import { formatServiceRate, formatServiceSchedule, parseServiceContent } from '../lib/serviceContent';
 
 function readableDescription(value) {
   if (typeof value === 'string') {
@@ -209,16 +210,20 @@ export default function PublicWorkerProfile({ workerId }) {
             <h2 id="services-heading" className={styles.sectionTitle}>Servicios ofrecidos</h2>
             <ul className={styles.serviceList}>
               {(services.length ? services : [{ id_servicio: 0, nombre: worker.oficio_principal }]).map(
-                (service) => (
-                  <li key={service.id_servicio || service.nombre} className={styles.serviceItem}>
+                (service) => {
+                  const details = parseServiceContent(service.descripcion);
+                  return <li key={service.id_servicio || service.nombre} className={styles.serviceItem}>
                     <span className={styles.serviceIcon} aria-hidden="true"><CheckIcon /></span>
-                    <span>{service.nombre}</span>
-                  </li>
-                ),
+                    <div><strong>{service.nombre}</strong>
+                      {details.descripcion && <p className={styles.bodyText}>{details.descripcion}</p>}
+                      {details.configurado && <p className={styles.bodyText}>{formatServiceRate(details.tarifa)} · {formatServiceSchedule(details.horario)}</p>}
+                    </div>
+                  </li>;
+                },
               )}
             </ul>
             <p className={styles.bodyText} style={{ marginTop: 12 }}>
-              El precio y el alcance se acuerdan en privado con el profesional.
+              La tarifa y el horario aparecen en cada servicio cuando el profesional los configura.
             </p>
           </section>
 

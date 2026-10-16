@@ -8,6 +8,7 @@ import { getWorkerContact, getWorkerProfile } from '../api/worker';
 import { listPortfolio } from '../api/portfolio';
 import { listMyServices } from '../api/offerings';
 import { Link } from '../router';
+import { formatServiceRate, formatServiceSchedule, parseServiceContent } from '../lib/serviceContent';
 import styles from './MyWorkerProfile.module.css';
 
 function maskPhone(value) {
@@ -15,16 +16,6 @@ function maskPhone(value) {
   if (!digits) return 'No registrado';
   const end = digits.slice(-3);
   return `(+502) *****-${end}`;
-}
-
-function scheduleLabel(slots = []) {
-  if (!slots.length) return 'Horario por coordinar';
-  const first = slots[0];
-  const days = [...new Set(slots.map((item) => item.dia))];
-  const dayText = days.length > 3
-    ? `${days[0]} - ${days.at(-1)}`
-    : days.join(', ');
-  return `${dayText} (${first.desde} - ${first.hasta})`;
 }
 
 export default function MyWorkerProfile() {
@@ -117,7 +108,7 @@ export default function MyWorkerProfile() {
             <section className={styles.card}>
               <CoverageMap coverage={coverage} />
               <p className={styles.location}>⌖ {(profile.cobertura || []).map((z) => z.nombre).join(', ') || 'El Asintal'}</p>
-              <p className={styles.schedule}><strong>Horario:</strong> {scheduleLabel(profile.horarios)}</p>
+              <p className={styles.schedule}><strong>Horarios:</strong> Consulta la disponibilidad indicada en cada servicio.</p>
             </section>
           </aside>
 
@@ -130,7 +121,10 @@ export default function MyWorkerProfile() {
 
             <section className={styles.card}>
               <div className={styles.sectionHead}><h2>Servicios ofrecidos</h2><Link to="/worker/content">Administrar</Link></div>
-              {services.length ? <ul className={styles.services}>{services.map((item) => <li key={item.id_servicio}><span>{item.nombre}</span>{item.descripcion && <small>{item.descripcion}</small>}</li>)}</ul> : <p className={styles.muted}>Todavía no has agregado servicios.</p>}
+              {services.length ? <ul className={styles.services}>{services.map((item) => {
+                const details = parseServiceContent(item.descripcion);
+                return <li key={item.id_servicio}><span>{item.nombre}</span>{details.descripcion && <small>{details.descripcion}</small>}{details.configurado && <small>{formatServiceRate(details.tarifa)} · {formatServiceSchedule(details.horario)}</small>}</li>;
+              })}</ul> : <p className={styles.muted}>Todavía no has agregado servicios.</p>}
             </section>
 
             <section className={styles.card}>

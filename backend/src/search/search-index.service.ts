@@ -145,9 +145,16 @@ export class SearchIndexService {
     }
     if (dto.verificado != null) query = query.eq('verificado', dto.verificado);
     if (q) {
-      query = query.or(
-        `oficio_principal.ilike.%${q}%,experiencia.ilike.%${q}%,descripcion.ilike.%${q}%`,
-      );
+      const categoryProfileIds = await this.findProfilesByServiceCategory(q);
+      const textFilters = [
+        `oficio_principal.ilike.%${q}%`,
+        `experiencia.ilike.%${q}%`,
+        `descripcion.ilike.%${q}%`,
+      ];
+      if (categoryProfileIds.length) {
+        textFilters.push(`id_perfil.in.(${categoryProfileIds.join(',')})`);
+      }
+      query = query.or(textFilters.join(','));
     }
 
     const { data: perfiles, error: perfilError } = await query;
@@ -286,6 +293,24 @@ export class SearchIndexService {
       throw new BadRequestException(`No se encontró la zona "${nombre}".`);
     }
     return ids;
+  }
+
+  private async findProfilesByServiceCategory(term: string) {
+    const { data: categories, error: categoryError } = await this.supabase
+      .from('categoria')
+      .select('id_categoria')
+      .ilike('nombre', `%${term}%`);
+    if (categoryError) throw new BadRequestException(categoryError.message);
+    const categoryIds = (categories || []).map((row: { id_categoria: number }) => row.id_categoria);
+    if (!categoryIds.length) return [];
+
+    const { data: services, error: serviceError } = await this.supabase
+      .from('servicio_ofrecido')
+      .select('id_perfil')
+      .in('id_categoria', categoryIds)
+      .eq('activo', true);
+    if (serviceError) throw new BadRequestException(serviceError.message);
+    return [...new Set((services || []).map((row: { id_perfil: number }) => row.id_perfil))];
   }
 
   private async loadUsuarios(ids: number[]) {

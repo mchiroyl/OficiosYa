@@ -48,6 +48,7 @@ const publicProfile = {
 class OficiosYaWorld {
   async mockApi() {
     this.searchRequests = [];
+    this.serviceRequests = [];
     await this.page.route('**/api/**', async (route) => {
       const path = new URL(route.request().url()).pathname;
       const respond = (json, status = 200) => route.fulfill({ status, json });
@@ -81,6 +82,11 @@ class OficiosYaWorld {
       if (path === '/api/worker/profile') return respond(profile);
       if (path === '/api/worker/contact') return respond({ correo: user.correo, telefono: '55554589' });
       if (path === '/api/identity/dpi') return respond({});
+      if (path === '/api/servicios' && route.request().method() === 'POST') {
+        const body = route.request().postDataJSON();
+        this.serviceRequests.push(body);
+        return respond({ ...body, id_servicio: 2 }, 201);
+      }
       if (path === '/api/servicios') return respond([
         { id_servicio: 1, id_perfil: 7, id_categoria: 3, nombre: 'Instalación eléctrica', descripcion: 'Instalaciones seguras', activo: true },
       ]);
@@ -163,6 +169,11 @@ When('abro mi perfil', async function () {
   await expect(this.page.getByRole('heading', { name: 'Johan Gómez' })).toBeVisible();
 });
 
+When('abro mi oferta y contenido', async function () {
+  await this.page.goto('/worker/content');
+  await expect(this.page.getByRole('heading', { name: 'Mi oferta y contenido' })).toBeVisible();
+});
+
 When('abro el directorio de la categoría {string}', async function (categoryName) {
   const ids = { Electricidad: 3, 'Plomería': 4 };
   await this.page.goto(`/categoria/${ids[categoryName]}`);
@@ -183,7 +194,7 @@ When('abro el chat con un mensaje continuo extenso', async function () {
 
 When('intento enviar un DPI con una imagen mayor de 8 MB', async function () {
   await this.page.goto('/worker/profile');
-  await expect(this.page.getByRole('heading', { name: 'Perfil y disponibilidad' })).toBeVisible();
+  await expect(this.page.getByRole('heading', { name: 'Datos del perfil y verificación' })).toBeVisible();
   await this.page.getByLabel('Frente').setInputFiles({
     name: 'dpi-grande.png',
     mimeType: 'image/png',
@@ -199,7 +210,7 @@ When('intento enviar un DPI con una imagen mayor de 8 MB', async function () {
 
 When('intento guardar una tarifa negativa', async function () {
   await this.page.goto('/worker/profile');
-  await expect(this.page.getByRole('heading', { name: 'Perfil y disponibilidad' })).toBeVisible();
+  await expect(this.page.getByRole('heading', { name: 'Datos del perfil y verificación' })).toBeVisible();
   await this.page.getByLabel('Monto desde').fill('-50');
   await this.page.getByRole('button', { name: 'Guardar cambios', exact: true }).click();
 });
@@ -256,7 +267,7 @@ Then('debo ver la biografía legible sin los metadatos ni precios públicos', as
   await expect(body).toContainText('Biografía profesional legible para clientes.');
   await expect(body).not.toContainText('"tarifas"');
   await expect(body).not.toContainText('Q 500.00');
-  await expect(body).toContainText('El precio y el alcance se acuerdan en privado');
+  await expect(body).toContainText('La tarifa y el horario aparecen en cada servicio');
   await expect(body).toContainText('4.0');
   await expect(body).toContainText('Basado en 2 reseñas');
 });
@@ -291,7 +302,35 @@ Then('debo ver mi teléfono enmascarado', async function () {
 
 Then('debo llegar al formulario de edición del perfil', async function () {
   await expect(this.page).toHaveURL(/\/worker\/profile$/);
-  await expect(this.page.getByRole('heading', { name: 'Perfil y disponibilidad' })).toBeVisible();
+  await expect(this.page.getByRole('heading', { name: 'Datos del perfil y verificación' })).toBeVisible();
+});
+
+Then('debo poder configurar la tarifa y el horario de cada servicio', async function () {
+  await expect(this.page.getByLabel('Nombre del servicio')).toBeVisible();
+  await expect(this.page.getByText('Tarifa de este servicio', { exact: true })).toBeVisible();
+  await expect(this.page.getByText('Horario para este servicio', { exact: true })).toBeVisible();
+  await expect(this.page.getByRole('button', { name: 'Agregar servicio', exact: true })).toBeVisible();
+});
+
+When('guardo un servicio con su precio y horario', async function () {
+  await this.page.getByLabel('Nombre del servicio').fill('Reparación de instalación');
+  await this.page.getByLabel('Categoría').selectOption('3');
+  await this.page.getByLabel('Descripción del servicio').fill('Revisión y reparación eléctrica');
+  await this.page.getByLabel('Cómo cobro').selectOption('por_hora');
+  await this.page.getByLabel('Precio desde (Q)').fill('100');
+  await this.page.getByLabel('Precio hasta (opcional, Q)').fill('150');
+  await this.page.getByText('Lunes', { exact: true }).click();
+  await this.page.getByRole('button', { name: 'Agregar servicio', exact: true }).click();
+  await expect.poll(() => this.serviceRequests.length, { timeout: 5000 }).toBe(1);
+});
+
+Then('la tarifa y el horario deben guardarse junto con el servicio', async function () {
+  const saved = this.serviceRequests[0];
+  expect(saved.nombre).toBe('Reparación de instalación');
+  expect(saved.descripcion).toMatch(/^oficiosya-service:v1:/);
+  const details = JSON.parse(saved.descripcion.slice('oficiosya-service:v1:'.length));
+  expect(details.tarifa).toMatchObject({ tipo: 'por_hora', monto_desde: 100, monto_hasta: 150 });
+  expect(details.horario.dias).toContain('lunes');
 });
 
 Then('el perfil no debe desbordarse horizontalmente', async function () {
