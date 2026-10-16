@@ -10,13 +10,6 @@ import ui from '../components/search/Search.module.css';
 import styles from './Home.module.css';
 
 const PAGE_SIZE = 12;
-const money = (amount) =>
-  new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(amount);
-const RATE_LABELS = {
-  por_hora: 'Por hora',
-  por_servicio: 'Por servicio',
-  a_convenir: 'A convenir',
-};
 
 export default function Home() {
   const { user } = useAuth();
@@ -84,22 +77,6 @@ export default function Home() {
 
   const applySearch = (event) => {
     event.preventDefault();
-    if (
-      draft.precio_min !== '' &&
-      draft.precio_max !== '' &&
-      Number(draft.precio_min) > Number(draft.precio_max)
-    ) {
-      setValidation('El precio máximo debe ser mayor o igual al mínimo.');
-      return;
-    }
-    if (
-      [draft.precio_min, draft.precio_max].some(
-        (value) => value !== '' && (!Number.isFinite(Number(value)) || Number(value) < 0),
-      )
-    ) {
-      setValidation('Los precios deben ser números mayores o iguales a cero.');
-      return;
-    }
     setValidation('');
     setQuery({ ...draft, q: draft.q.trim(), offset: 0 });
   };
@@ -128,7 +105,7 @@ export default function Home() {
             <br />
             en el lugar indicado.
           </h1>
-          <p>Busca profesionales en El Asintal, compara y solicita el servicio.</p>
+          <p>Busca profesionales en El Asintal, revisa sus perfiles y solicita el servicio.</p>
           <form className={styles.searchBar} role="search" onSubmit={applySearch}>
             <label className="sr-only" htmlFor="general-search">
               Buscar por oficio o servicio
@@ -186,7 +163,7 @@ export default function Home() {
             ) : result.perfiles.length === 0 ? (
               <div className={styles.empty}>
                 <h3>No encontramos profesionales</h3>
-                <p>Prueba otro oficio, amplía el precio o cambia la zona.</p>
+                <p>Prueba otro oficio o cambia la zona.</p>
                 <button className={ui.secondary} onClick={reset}>
                   Limpiar búsqueda y filtros
                 </button>
@@ -233,18 +210,6 @@ export default function Home() {
                           'Por consultar'}
                       </p>
                       <div className={styles.cardBottom}>
-                        <p className={styles.price}>
-                          {worker.tarifas?.monto_desde != null ? (
-                            <>
-                              Desde <strong>{money(worker.tarifas.monto_desde)}</strong>
-                              {RATE_LABELS[worker.tarifas.tipo] && (
-                                <small>{RATE_LABELS[worker.tarifas.tipo]}</small>
-                              )}
-                            </>
-                          ) : (
-                            'Tarifa por consultar'
-                          )}
-                        </p>
                         <div style={{ display: 'grid', gap: 8, width: '100%' }}>
                           <Link to={`/workers/${worker.id_perfil}`} className={ui.secondary}>
                             Ver perfil público

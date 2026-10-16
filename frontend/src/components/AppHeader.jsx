@@ -71,6 +71,9 @@ export default function AppHeader() {
               <Link to="/worker/profile" className={linkClass('/worker/profile')}>
                 Mi oferta
               </Link>
+              <Link to="/worker/my-profile" className={linkClass('/worker/my-profile')}>
+                Perfil
+              </Link>
               <Link to="/worker/content" className={linkClass('/worker/content')}>
                 Contenido
               </Link>

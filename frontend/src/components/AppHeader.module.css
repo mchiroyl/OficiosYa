@@ -1,6 +1,6 @@
 .bar {
   background: #fff;
-  border-bottom: 1px solid #dbe7e5;
+  border-bottom: 1px solid #d9d9d9;
   position: sticky;
   top: 0;
   z-index: 40;
@@ -23,12 +23,12 @@
   gap: 10px;
   font-size: 22px;
   font-weight: 700;
-  color: #183e37;
+  color: #000000;
   text-decoration: none;
 }
 
 .accent {
-  color: #247c7c;
+  color: #0065f4;
 }
 
 .modeWrap {
@@ -47,19 +47,19 @@
 }
 
 .nav a {
-  color: #3d5f57;
+  color: #979797;
   text-decoration: none;
   padding: 6px 0;
   border-bottom: 2px solid transparent;
 }
 
 .nav a:hover {
-  color: #183e37;
+  color: #000000;
 }
 
 .active {
-  color: #183e37 !important;
-  border-bottom-color: #299d98 !important;
+  color: #000000 !important;
+  border-bottom-color: #0065f4 !important;
   font-weight: 600;
 }
 
@@ -71,14 +71,14 @@
 .logout {
   border: 0;
   background: transparent;
-  color: #526b67;
+  color: #979797;
   cursor: pointer;
   font: inherit;
   padding: 6px 0;
 }
 
 .logout:hover {
-  color: #183e37;
+  color: #000000;
   text-decoration: underline;
 }
 

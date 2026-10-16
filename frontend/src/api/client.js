@@ -30,6 +30,9 @@ function readMessage(data) {
   if (/invalid login credentials/i.test(String(text))) {
     return 'Correo o contraseña incorrectos.';
   }
+  if (/file too large|entity too large|payload too large/i.test(String(text))) {
+    return 'El archivo supera el límite permitido de 8 MB. Elige una imagen más pequeña.';
+  }
   return text;
 }
 

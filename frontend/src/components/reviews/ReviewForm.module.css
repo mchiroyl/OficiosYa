@@ -34,12 +34,12 @@
   font-size: 24px;
   cursor: pointer;
   line-height: 1;
-  color: #526b67;
+  color: #979797;
 }
 
 .hint {
   font-size: 13px;
-  color: #526b67;
+  color: #979797;
 }
 
 .stars {
@@ -101,14 +101,14 @@
 
 .primary {
   border: 0;
-  background: #299d98;
+  background: #0065f4;
   color: #fff;
 }
 
 .ghost {
   border: 1px solid #d9d9d9;
   background: transparent;
-  color: #526b67;
+  color: #979797;
 }
 
 .primary:disabled,

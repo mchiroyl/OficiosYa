@@ -25,6 +25,8 @@ const DIAS = [
 ];
 
 const EMPTY_HORARIO = { dia: 'lunes', desde: '08:00', hasta: '17:00' };
+const MAX_DPI_FILE_SIZE = 8 * 1024 * 1024;
+const INVALID_RATE_MESSAGE = 'Los montos de tarifa deben ser mayores o iguales a Q 0.';
 
 const EMPTY_TARIFAS = {
   tipo: 'por_hora',
@@ -176,6 +178,10 @@ export default function WorkerProfile() {
       setError('Adjunta el frente y el reverso de tu DPI.');
       return;
     }
+    if ([frente, reverso].some((file) => file.size > MAX_DPI_FILE_SIZE)) {
+      setError('El archivo supera el límite permitido de 8 MB. Elige una imagen más pequeña.');
+      return;
+    }
     if (numeroDpi && !/^\d{13}$/.test(numeroDpi.replace(/\D/g, ''))) {
       setError('El número de DPI debe tener 13 dígitos.');
       return;
@@ -205,6 +211,10 @@ export default function WorkerProfile() {
     if (showMontos) {
       const desde = parseNumber(tarifas.monto_desde);
       const hasta = parseNumber(tarifas.monto_hasta);
+      if ((desde != null && desde < 0) || (hasta != null && hasta < 0)) {
+        setError(INVALID_RATE_MESSAGE);
+        return;
+      }
       if (desde != null && hasta != null && hasta < desde) {
         setError('El monto hasta no puede ser menor que el monto desde.');
         return;
@@ -442,9 +452,10 @@ export default function WorkerProfile() {
                     className={styles.input}
                     placeholder="50"
                     value={tarifas.monto_desde}
-                    onChange={(e) =>
-                      setTarifas((prev) => ({ ...prev, monto_desde: e.target.value }))
-                    }
+                    onChange={(event) => {
+                      setError('');
+                      setTarifas((prev) => ({ ...prev, monto_desde: event.target.value }));
+                    }}
                     disabled={saving}
                   />
                 </div>
@@ -460,9 +471,10 @@ export default function WorkerProfile() {
                     className={styles.input}
                     placeholder="120"
                     value={tarifas.monto_hasta}
-                    onChange={(e) =>
-                      setTarifas((prev) => ({ ...prev, monto_hasta: e.target.value }))
-                    }
+                    onChange={(event) => {
+                      setError('');
+                      setTarifas((prev) => ({ ...prev, monto_hasta: event.target.value }));
+                    }}
                     disabled={saving}
                   />
                 </div>

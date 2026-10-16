@@ -5,8 +5,6 @@ export const DEFAULT_FILTERS = {
   id_zona: '',
   id_categoria: '',
   disponibilidad: 'Disponible',
-  precio_min: '',
-  precio_max: '',
   reputacion_min: '',
   verificado: false,
   orden: 'relevancia',
@@ -80,34 +78,6 @@ export default function SearchFilters({
         </select>
       </label>
 
-      <fieldset className={styles.priceRange}>
-        <legend>Rango de precio (Q)</legend>
-        <label className={styles.field}>
-          Mínimo
-          <input
-            type="number"
-            name="precio_min"
-            min="0"
-            step="0.01"
-            placeholder="0"
-            value={filters.precio_min}
-            onChange={change}
-          />
-        </label>
-        <label className={styles.field}>
-          Máximo
-          <input
-            type="number"
-            name="precio_max"
-            min="0"
-            step="0.01"
-            placeholder="Sin límite"
-            value={filters.precio_max}
-            onChange={change}
-          />
-        </label>
-      </fieldset>
-
       <label className={styles.field}>
         Calificación mínima
         <select name="reputacion_min" value={filters.reputacion_min} onChange={change}>
@@ -135,8 +105,6 @@ export default function SearchFilters({
         <select name="orden" value={filters.orden} onChange={change}>
           <option value="relevancia">Relevancia</option>
           <option value="reputacion">Mejor calificación</option>
-          <option value="precio_asc">Menor precio</option>
-          <option value="precio_desc">Mayor precio</option>
         </select>
       </label>
 

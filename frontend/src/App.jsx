@@ -9,6 +9,7 @@ import ClientHome from './pages/ClientHome';
 import WorkerHome from './pages/WorkerHome';
 import SearchDirectory from './pages/SearchDirectory';
 import WorkerProfile from './pages/WorkerProfile';
+import MyWorkerProfile from './pages/MyWorkerProfile';
 import WorkerContent from './pages/WorkerContent';
 import PublicWorkerProfile from './pages/PublicWorkerProfile';
 import ClientDashboard from './pages/ClientDashboard';
@@ -41,6 +42,7 @@ function AuthenticatedApp() {
   if (path === '/mis-solicitudes' || path === '/client/requests') return <ClientDashboard />;
   if (path === '/trabajador/bandeja' || path === '/worker/requests') return <WorkerInbox />;
   if (path === '/worker/profile') return <WorkerProfile />;
+  if (path === '/worker/my-profile') return <MyWorkerProfile />;
   if (path === '/worker/content') return <WorkerContent />;
   if (path === '/chat') return <ChatInbox />;
   if (chatThread) return <ChatThread />;

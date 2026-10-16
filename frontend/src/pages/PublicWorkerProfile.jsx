@@ -1,4 +1,4 @@
-﻿import { useEffect, useState } from 'react';
+import { useEffect, useState } from 'react';
 import BackLink from '../components/BackLink';
 import Button from '../components/ui/Button';
 import Rating from '../components/worker/Rating';
@@ -13,14 +13,27 @@ import { listReviews } from '../api/reviews';
 import { useAuth } from '../auth/AuthContext';
 import styles from './PublicWorkerProfile.module.css';
 
-const money = (amount) =>
-  new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(amount);
-
-const RATE_LABELS = {
-  por_hora: 'Por hora',
-  por_servicio: 'Por servicio',
-  a_convenir: 'A convenir',
-};
+function readableDescription(value) {
+  if (typeof value === 'string') {
+    const raw = value.trim();
+    if (!raw) return '';
+    try {
+      const parsed = JSON.parse(raw);
+      if (parsed && typeof parsed === 'object' && !Array.isArray(parsed)) {
+        return [parsed.bio, parsed.descripcion, parsed.description, parsed.acerca_de]
+          .find((item) => typeof item === 'string' && item.trim())?.trim() || '';
+      }
+    } catch {
+      // Las descripciones anteriores se guardaban como texto libre.
+    }
+    return raw;
+  }
+  if (value && typeof value === 'object') {
+    return [value.bio, value.descripcion, value.description, value.acerca_de]
+      .find((item) => typeof item === 'string' && item.trim())?.trim() || '';
+  }
+  return '';
+}
 
 export default function PublicWorkerProfile({ workerId }) {
   const { isAuthenticated, session } = useAuth();
@@ -103,9 +116,11 @@ export default function PublicWorkerProfile({ workerId }) {
   }
 
   const name = worker.nombre || worker.oficio_principal || `Perfil #${worker.id_perfil}`;
-  const rating = Number(worker.promedio_calificacion || worker.reputacion || 0);
+  const rating = reviews.length
+    ? reviews.reduce((sum, review) => sum + (Number(review.calificacion) || 0), 0) / reviews.length
+    : Number(worker.promedio_calificacion ?? worker.reputacion ?? 0);
   const reviewCount = reviews.length || Number(worker.total_resenas || 0);
-  const tarifas = worker.tarifas || {};
+  const description = readableDescription(worker.descripcion);
   const coberturaAreas = (worker.cobertura || []).map((z) => z.nombre || z).filter(Boolean);
   const horarios = worker.horarios || [];
   const available = (worker.disponibilidad || '').toLowerCase() === 'disponible';
@@ -134,7 +149,7 @@ export default function PublicWorkerProfile({ workerId }) {
         <header className={styles.heroCard}>
           <div className={styles.heroTop}>
             <div className={styles.avatarWrap}>
-              <div className={styles.avatar} style={{ display: 'grid', placeItems: 'center', background: '#e1f1ec', fontSize: 36, fontWeight: 700 }}>
+              <div className={styles.avatar} style={{ display: 'grid', placeItems: 'center', background: '#d7ebff', fontSize: 36, fontWeight: 700 }}>
                 {String(name).trim().charAt(0) || 'O'}
               </div>
               {available && <span className={styles.availableDot} title="Disponible" />}
@@ -159,7 +174,7 @@ export default function PublicWorkerProfile({ workerId }) {
           </div>
 
           <p className={styles.shortBio}>
-            {worker.descripcion || 'Profesional independiente en El Asintal.'}
+            {description || 'Profesional independiente en El Asintal.'}
           </p>
 
           <div className={styles.ctaWrap}>
@@ -181,7 +196,7 @@ export default function PublicWorkerProfile({ workerId }) {
         <div className={styles.content}>
           <section className={styles.card} aria-labelledby="about-heading">
             <h2 id="about-heading" className={styles.sectionTitle}>Acerca de</h2>
-            <p className={styles.bodyText}>{worker.descripcion || 'Sin descripción.'}</p>
+            <p className={styles.bodyText}>{description || 'Sin descripción.'}</p>
             {worker.experiencia && (
               <div className={styles.experience}>
                 <BriefcaseIcon />
@@ -191,7 +206,7 @@ export default function PublicWorkerProfile({ workerId }) {
           </section>
 
           <section className={styles.card} aria-labelledby="services-heading">
-            <h2 id="services-heading" className={styles.sectionTitle}>Oficios y tarifas</h2>
+            <h2 id="services-heading" className={styles.sectionTitle}>Servicios ofrecidos</h2>
             <ul className={styles.serviceList}>
               {(services.length ? services : [{ id_servicio: 0, nombre: worker.oficio_principal }]).map(
                 (service) => (
@@ -203,10 +218,7 @@ export default function PublicWorkerProfile({ workerId }) {
               )}
             </ul>
             <p className={styles.bodyText} style={{ marginTop: 12 }}>
-              {tarifas.monto_desde != null
-                ? `Tarifa base desde ${money(tarifas.monto_desde)} (${RATE_LABELS[tarifas.tipo] || tarifas.tipo || 'referencia'})`
-                : 'Tarifa por consultar'}
-              {tarifas.notas ? ` · ${tarifas.notas}` : ''}
+              El precio y el alcance se acuerdan en privado con el profesional.
             </p>
           </section>
 

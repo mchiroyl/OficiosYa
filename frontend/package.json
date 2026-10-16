@@ -5,6 +5,8 @@
   "type": "module",
   "scripts": {
     "test:e2e": "playwright test",
+    "test:gherkin": "npm run build && node ./scripts/run-gherkin.mjs",
+    "test:gherkin:external": "cucumber-js --import 'features/step_definitions/**/*.mjs' --format progress",
     "dev": "node ./node_modules/vite/bin/vite.js",
     "build": "node ./node_modules/vite/bin/vite.js build",
     "preview": "node ./node_modules/vite/bin/vite.js preview",
@@ -18,6 +20,7 @@
     "socket.io-client": "^4.8.4"
   },
   "devDependencies": {
+    "@cucumber/cucumber": "^12.9.0",
     "@playwright/test": "^1.63.0",
     "@vitejs/plugin-react": "^4.3.4",
     "vite": "^6.0.0"

@@ -11,13 +11,6 @@ import ui from '../components/search/Search.module.css';
 import styles from './Home.module.css';
 
 const PAGE_SIZE = 12;
-const money = (amount) =>
-  new Intl.NumberFormat('es-GT', { style: 'currency', currency: 'GTQ' }).format(amount);
-const RATE_LABELS = {
-  por_hora: 'Por hora',
-  por_servicio: 'Por servicio',
-  a_convenir: 'A convenir',
-};
 
 /**
  * Interfaz de directorio / resultados.
@@ -51,6 +44,7 @@ export default function SearchDirectory() {
   });
   const [zones, setZones] = useState(null);
   const [categories, setCategories] = useState([]);
+  const [categoriesLoaded, setCategoriesLoaded] = useState(false);
   const [zonesError, setZonesError] = useState('');
   const [zonesRetry, setZonesRetry] = useState(0);
   const [validation, setValidation] = useState('');
@@ -84,10 +78,13 @@ export default function SearchDirectory() {
         if (controller.signal.aborted) return;
         setZones(Array.isArray(zonesData) ? zonesData : zonesData?.data || []);
         setCategories(Array.isArray(cats) ? cats : cats?.data || []);
+        setCategoriesLoaded(true);
       })
       .catch(() => {
         if (controller.signal.aborted) return;
         setZones([]);
+        setCategories([]);
+        setCategoriesLoaded(true);
         setZonesError('No se pudieron cargar las zonas. Puedes buscar sin ese filtro.');
       });
     return () => controller.abort();
@@ -95,6 +92,11 @@ export default function SearchDirectory() {
 
   useEffect(() => {
     const controller = new AbortController();
+    const selectedCategory = query.id_categoria || categoryId;
+    if (selectedCategory && /^\d+$/.test(String(selectedCategory)) && !categoriesLoaded) {
+      setLoading(true);
+      return () => controller.abort();
+    }
     setLoading(true);
     setError('');
 
@@ -104,13 +106,22 @@ export default function SearchDirectory() {
       limit: PAGE_SIZE,
     };
 
-    // Categorías de respaldo (string no numérico) se buscan por texto de oficio.
-    if (filters.id_categoria && !/^\d+$/.test(String(filters.id_categoria))) {
-      const cat = categories.find(
-        (c) => String(c.id_categoria) === String(filters.id_categoria),
+    // El endpoint acepta texto libre para la categoría y rechaza id_categoria.
+    delete filters.id_categoria;
+    if (selectedCategory) {
+      const category = categories.find(
+        (item) => String(item.id_categoria) === String(selectedCategory),
       );
-      filters.q = filters.q || cat?.nombre || filters.id_categoria;
-      delete filters.id_categoria;
+      const categoryText = category?.nombre || (!/^\d+$/.test(String(selectedCategory))
+        ? String(selectedCategory).replace(/[-_]/g, ' ')
+        : '');
+      if (categoryText) filters.q = filters.q || categoryText;
+      if (!categoryText && categoriesLoaded) {
+        setResult({ perfiles: [], total: 0 });
+        setError('No pudimos identificar esta categoría. Vuelve al menú y selecciónala de nuevo.');
+        setLoading(false);
+        return () => controller.abort();
+      }
     }
 
     searchProfiles(filters, { signal: controller.signal })
@@ -130,26 +141,10 @@ export default function SearchDirectory() {
         if (!controller.signal.aborted) setLoading(false);
       });
     return () => controller.abort();
-  }, [query, categories]);
+  }, [query, categories, categoryId, categoriesLoaded]);
 
   const applySearch = (event) => {
     event.preventDefault();
-    if (
-      draft.precio_min !== '' &&
-      draft.precio_max !== '' &&
-      Number(draft.precio_min) > Number(draft.precio_max)
-    ) {
-      setValidation('El precio máximo debe ser mayor o igual al mínimo.');
-      return;
-    }
-    if (
-      [draft.precio_min, draft.precio_max].some(
-        (value) => value !== '' && (!Number.isFinite(Number(value)) || Number(value) < 0),
-      )
-    ) {
-      setValidation('Los precios deben ser números mayores o iguales a cero.');
-      return;
-    }
     setValidation('');
     setQuery({ ...draft, q: draft.q.trim(), offset: 0 });
   };
@@ -197,7 +192,7 @@ export default function SearchDirectory() {
           <p>
             {categoryId
               ? `Profesionales de ${categoryName || 'esta categoría'} en El Asintal. Refina con filtros a la izquierda.`
-              : 'Busca por oficio y combina filtros de zona, precio y reputación.'}
+              : 'Busca por oficio y combina filtros de zona, disponibilidad y reputación.'}
           </p>
           <form className={styles.searchBar} role="search" onSubmit={applySearch}>
             <label className="sr-only" htmlFor="general-search">
@@ -256,7 +251,7 @@ export default function SearchDirectory() {
             ) : result.perfiles.length === 0 ? (
               <div className={styles.empty}>
                 <h3>No encontramos profesionales</h3>
-                <p>Prueba otra categoría, amplía el precio o cambia la zona.</p>
+                <p>Prueba otra categoría o cambia la zona.</p>
                 <button className={ui.secondary} onClick={() => navigate('/')}>
                   Volver al menú de categorías
                 </button>
@@ -313,18 +308,6 @@ export default function SearchDirectory() {
                           'Por consultar'}
                       </p>
                       <div className={styles.cardBottom}>
-                        <p className={styles.price}>
-                          {worker.tarifas?.monto_desde != null ? (
-                            <>
-                              Desde <strong>{money(worker.tarifas.monto_desde)}</strong>
-                              {RATE_LABELS[worker.tarifas.tipo] && (
-                                <small>{RATE_LABELS[worker.tarifas.tipo]}</small>
-                              )}
-                            </>
-                          ) : (
-                            'Tarifa por consultar'
-                          )}
-                        </p>
                         <div
                           style={{ display: 'grid', gap: 8, width: '100%' }}
                           onClick={(event) => event.stopPropagation()}
