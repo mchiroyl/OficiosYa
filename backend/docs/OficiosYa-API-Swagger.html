@@ -1,0 +1,1181 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8" />
+<title>OficiosYa API — Documentación Swagger</title>
+<style>
+  @page { size: A4; margin: 16mm 14mm; }
+  * { box-sizing: border-box; }
+  body {
+    font-family: "Segoe UI", Arial, sans-serif;
+    color: #3b4151;
+    margin: 0;
+    background: #fff;
+  }
+  .cover {
+    background: #299d98;
+    color: #fff;
+    padding: 28px 26px;
+    border-radius: 10px;
+    margin-bottom: 22px;
+  }
+  .cover h1 { margin: 0 0 8px; font-size: 28px; }
+  .cover p { margin: 0; opacity: .92; line-height: 1.45; }
+  .meta { margin-top: 14px; font-size: 13px; opacity: .9; }
+  .legend { display: flex; gap: 8px; flex-wrap: wrap; margin: 16px 0 22px; }
+  .chip {
+    display: inline-block; padding: 3px 8px; border-radius: 4px;
+    color: #fff; font-size: 11px; font-weight: 700; letter-spacing: .04em;
+  }
+  h2 {
+    color: #247c7c; border-bottom: 2px solid #c2ece9;
+    padding-bottom: 6px; margin: 26px 0 8px; font-size: 18px;
+  }
+  .tag-desc { color: #6b7280; margin: 0 0 12px; font-size: 13px; }
+  .op {
+    border: 1px solid var(--c);
+    background: var(--bg);
+    border-radius: 6px;
+    margin: 0 0 10px;
+    overflow: hidden;
+    page-break-inside: avoid;
+  }
+  .op-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 8px 10px; background: #fff;
+    border-bottom: 1px solid #e6e6e6;
+  }
+  .method {
+    min-width: 72px; text-align: center; color: #fff; background: var(--c);
+    font-size: 11px; font-weight: 800; padding: 5px 8px; border-radius: 4px;
+  }
+  .path { font-size: 13px; color: #3b4151; flex: 1; }
+  .lock, .public {
+    font-size: 10px; font-weight: 700; padding: 3px 7px; border-radius: 999px;
+  }
+  .lock { background: #fff3cd; color: #856404; }
+  .public { background: #e9f7f6; color: #247c7c; }
+  .summary { margin: 8px 12px 4px; font-weight: 650; font-size: 13.5px; }
+  .extra { margin: 0 12px 8px; font-size: 12.5px; color: #4b5563; }
+  .block { margin: 0 12px 10px; }
+  .block h4 { margin: 8px 0 4px; font-size: 11px; text-transform: uppercase; color: #6b7280; }
+  table { width: 100%; border-collapse: collapse; background: #fff; font-size: 11.5px; }
+  th, td { border: 1px solid #e5e7eb; padding: 5px 6px; text-align: left; vertical-align: top; }
+  th { background: #f8fafb; color: #374151; }
+  .resp { margin: 0 12px 10px; font-size: 12px; color: #4b5563; }
+</style>
+</head>
+<body>
+  <header class="cover">
+    <h1>OficiosYa API</h1>
+    <p>Documentación REST generada a partir de Swagger. Describe cada endpoint, sus parámetros, el cuerpo de la petición y si requiere autenticación.</p>
+    <div class="meta">Versión 1.0 · Base: http://localhost:3000 · UI: /api/docs</div>
+  </header>
+  <div class="legend">
+    <span class="chip" style="background:#61affe">GET</span>
+    <span class="chip" style="background:#49cc90">POST</span>
+    <span class="chip" style="background:#50e3c2">PATCH</span>
+    <span class="chip" style="background:#f93e3e">DELETE</span>
+    <span class="chip" style="background:#856404">JWT = requiere token</span>
+  </div>
+  <section class="tag"><h2>Auth</h2><p class="tag-desc">Registro, login, sesión y recuperación de contraseña</p>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/auth/register</code>
+            <span class="public">Público</span>
+          </div>
+          <p class="summary">Crear un usuario nuevo</p>
+          <p class="extra">Crea el usuario en la tabla usuario y en Supabase Auth.</p>
+          
+          
+            <div class="block"><h4>Body (RegisterDto)</h4>
+            <table><thead><tr><th>Campo</th><th>Tipo</th><th>Req.</th><th>Ejemplo</th><th>Notas</th></tr></thead>
+            <tbody><tr><td>nombre</td><td>string</td><td>sí</td><td>Ana Pérez</td><td></td></tr><tr><td>correo</td><td>string</td><td>sí</td><td>ana@example.com</td><td></td></tr><tr><td>telefono</td><td>string</td><td>no</td><td>70001234</td><td></td></tr><tr><td>password</td><td>string</td><td>sí</td><td>secreto123</td><td></td></tr><tr><td>modo</td><td>cliente | trabajador</td><td>no</td><td>cliente</td><td></td></tr></tbody></table></div>
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/auth/login</code>
+            <span class="public">Público</span>
+          </div>
+          <p class="summary">Iniciar sesión y obtener tokens</p>
+          <p class="extra">Valida correo y contraseña. Devuelve tokens y si tiene perfil de trabajador.</p>
+          
+          
+            <div class="block"><h4>Body (LoginDto)</h4>
+            <table><thead><tr><th>Campo</th><th>Tipo</th><th>Req.</th><th>Ejemplo</th><th>Notas</th></tr></thead>
+            <tbody><tr><td>correo</td><td>string</td><td>sí</td><td>ana@example.com</td><td></td></tr><tr><td>password</td><td>string</td><td>sí</td><td>secreto123</td><td></td></tr><tr><td>rememberMe</td><td>boolean</td><td>no</td><td>True</td><td></td></tr></tbody></table></div>
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/auth/logout</code>
+            <span class="public">Público</span>
+          </div>
+          <p class="summary">Cerrar la sesión actual</p>
+          <p class="extra">Cierra la sesión del access token enviado.</p>
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>authorization</td><td>header</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/auth/refresh-token</code>
+            <span class="public">Público</span>
+          </div>
+          <p class="summary">Renovar el access token</p>
+          <p class="extra">Emite un access token nuevo usando el refresh token.</p>
+          
+          
+            <div class="block"><h4>Body (RefreshTokenDto)</h4>
+            <table><thead><tr><th>Campo</th><th>Tipo</th><th>Req.</th><th>Ejemplo</th><th>Notas</th></tr></thead>
+            <tbody><tr><td>refreshToken</td><td>string</td><td>sí</td><td></td><td></td></tr></tbody></table></div>
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/auth/me</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener el usuario autenticado</p>
+          <p class="extra">Devuelve los datos del usuario autenticado.</p>
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/auth/forgot-password</code>
+            <span class="public">Público</span>
+          </div>
+          <p class="summary">Solicitar recuperación de acceso (HU-03)</p>
+          <p class="extra">HU-03. Genera token y código temporales y simula el envío.</p>
+          
+          
+            <div class="block"><h4>Body (ForgotPasswordDto)</h4>
+            <table><thead><tr><th>Campo</th><th>Tipo</th><th>Req.</th><th>Ejemplo</th><th>Notas</th></tr></thead>
+            <tbody><tr><td>correo</td><td>string</td><td>sí</td><td>ana@example.com</td><td></td></tr></tbody></table></div>
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/auth/reset-password</code>
+            <span class="public">Público</span>
+          </div>
+          <p class="summary">Restablecer contraseña con token o código</p>
+          <p class="extra">Cambia la contraseña con el token del enlace o el código de 6 dígitos.</p>
+          
+          
+            <div class="block"><h4>Body (ResetPasswordDto)</h4>
+            <table><thead><tr><th>Campo</th><th>Tipo</th><th>Req.</th><th>Ejemplo</th><th>Notas</th></tr></thead>
+            <tbody><tr><td>token</td><td>string</td><td>no</td><td></td><td>Token temporal del enlace de recuperación</td></tr><tr><td>correo</td><td>string</td><td>no</td><td>ana@example.com</td><td></td></tr><tr><td>codigo</td><td>string</td><td>no</td><td>847291</td><td>Código temporal de 6 dígitos</td></tr><tr><td>accessToken</td><td>string</td><td>no</td><td></td><td></td></tr><tr><td>refreshToken</td><td>string</td><td>no</td><td></td><td></td></tr><tr><td>password</td><td>string</td><td>sí</td><td>nuevaClave123</td><td></td></tr></tbody></table></div>
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/auth/change-password</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Cambiar contraseña estando autenticado</p>
+          <p class="extra">Cambia la contraseña con la clave actual (usuario logueado).</p>
+          
+          
+            <div class="block"><h4>Body (ChangePasswordDto)</h4>
+            <table><thead><tr><th>Campo</th><th>Tipo</th><th>Req.</th><th>Ejemplo</th><th>Notas</th></tr></thead>
+            <tbody><tr><td>passwordActual</td><td>string</td><td>sí</td><td>secreto123</td><td></td></tr><tr><td>passwordNueva</td><td>string</td><td>sí</td><td>nuevaClave123</td><td></td></tr></tbody></table></div>
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/auth/verify-email</code>
+            <span class="public">Público</span>
+          </div>
+          <p class="summary">Verificar el correo electrónico</p>
+          <p class="extra">Confirma el correo con el token o código de verificación.</p>
+          
+          
+            <div class="block"><h4>Body (VerifyEmailDto)</h4>
+            <table><thead><tr><th>Campo</th><th>Tipo</th><th>Req.</th><th>Ejemplo</th><th>Notas</th></tr></thead>
+            <tbody><tr><td>correo</td><td>string</td><td>no</td><td>ana@example.com</td><td></td></tr><tr><td>token</td><td>string</td><td>sí</td><td>123456</td><td></td></tr></tbody></table></div>
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/auth/resend-verification</code>
+            <span class="public">Público</span>
+          </div>
+          <p class="summary">Reenviar el correo de verificación</p>
+          <p class="extra">Reenvía el correo de verificación.</p>
+          
+          
+            <div class="block"><h4>Body (ResendVerificationDto)</h4>
+            <table><thead><tr><th>Campo</th><th>Tipo</th><th>Req.</th><th>Ejemplo</th><th>Notas</th></tr></thead>
+            <tbody><tr><td>correo</td><td>string</td><td>sí</td><td>ana@example.com</td><td></td></tr></tbody></table></div>
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/auth/deactivate</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Desactivar la cuenta</p>
+          <p class="extra">Pone modo_activo = false.</p>
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/auth/reactivate</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Reactivar la cuenta</p>
+          <p class="extra">Vuelve a activar la cuenta.</p>
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/auth/account</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar la cuenta</p>
+          <p class="extra">Marca la cuenta como ELIMINADO y la desactiva.</p>
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>Admin</h2><p class="tag-desc">Moderación de cuentas</p>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/admin/usuarios/{id}/estado</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Cambiar el estado de un usuario</p>
+          <p class="extra">Modera el estado: ACTIVO, SUSPENDIDO o ELIMINADO.</p>
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>number</td></tr></tbody></table></div>
+          
+            <div class="block"><h4>Body (UpdateEstadoDto)</h4>
+            <table><thead><tr><th>Campo</th><th>Tipo</th><th>Req.</th><th>Ejemplo</th><th>Notas</th></tr></thead>
+            <tbody><tr><td>estado</td><td>ACTIVO | SUSPENDIDO | ELIMINADO</td><td>sí</td><td></td><td></td></tr></tbody></table></div>
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>usuarios</h2><p class="tag-desc">Endpoints de usuarios.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/usuarios</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar usuarios</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/usuarios</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en usuarios</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/usuarios/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de usuarios</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/usuarios/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de usuarios</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/usuarios/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de usuarios</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>zonas</h2><p class="tag-desc">Endpoints de zonas.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/zonas</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar zonas</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/zonas</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en zonas</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/zonas/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de zonas</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/zonas/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de zonas</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/zonas/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de zonas</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>perfiles-trabajador</h2><p class="tag-desc">Endpoints de perfiles-trabajador.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/perfiles-trabajador</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar perfiles-trabajador</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/perfiles-trabajador</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en perfiles-trabajador</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/perfiles-trabajador/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de perfiles-trabajador</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/perfiles-trabajador/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de perfiles-trabajador</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/perfiles-trabajador/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de perfiles-trabajador</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>perfiles-zona</h2><p class="tag-desc">Endpoints de perfiles-zona.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/perfiles-zona</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar perfiles-zona</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/perfiles-zona</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en perfiles-zona</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/perfiles-zona/{idPerfil}/{idZona}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de perfiles-zona</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>idPerfil</td><td>path</td><td>sí</td><td>string</td></tr><tr><td>idZona</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/perfiles-zona/{idPerfil}/{idZona}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de perfiles-zona</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>idPerfil</td><td>path</td><td>sí</td><td>string</td></tr><tr><td>idZona</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/perfiles-zona/{idPerfil}/{idZona}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de perfiles-zona</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>idPerfil</td><td>path</td><td>sí</td><td>string</td></tr><tr><td>idZona</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>portafolio</h2><p class="tag-desc">Endpoints de portafolio.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/portafolio</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar portafolio</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/portafolio</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en portafolio</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/portafolio/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de portafolio</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/portafolio/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de portafolio</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/portafolio/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de portafolio</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>reportes</h2><p class="tag-desc">Endpoints de reportes.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/reportes</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar reportes</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/reportes</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en reportes</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/reportes/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de reportes</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/reportes/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de reportes</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/reportes/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de reportes</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>bitacora</h2><p class="tag-desc">Endpoints de bitacora.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/bitacora</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar bitacora</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/bitacora</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en bitacora</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/bitacora/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de bitacora</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/bitacora/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de bitacora</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/bitacora/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de bitacora</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>categorias</h2><p class="tag-desc">Endpoints de categorias.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/categorias</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar categorias</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/categorias</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en categorias</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/categorias/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de categorias</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/categorias/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de categorias</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/categorias/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de categorias</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>servicios</h2><p class="tag-desc">Endpoints de servicios.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/servicios</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar servicios</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/servicios</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en servicios</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/servicios/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de servicios</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/servicios/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de servicios</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/servicios/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de servicios</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>solicitudes</h2><p class="tag-desc">Endpoints de solicitudes.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/solicitudes</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar solicitudes</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/solicitudes</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en solicitudes</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/solicitudes/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de solicitudes</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/solicitudes/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de solicitudes</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/solicitudes/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de solicitudes</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>cotizaciones</h2><p class="tag-desc">Endpoints de cotizaciones.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/cotizaciones</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar cotizaciones</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/cotizaciones</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en cotizaciones</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/cotizaciones/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de cotizaciones</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/cotizaciones/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de cotizaciones</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/cotizaciones/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de cotizaciones</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>mensajes</h2><p class="tag-desc">Endpoints de mensajes.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/mensajes</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar mensajes</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/mensajes</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en mensajes</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/mensajes/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de mensajes</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/mensajes/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de mensajes</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/mensajes/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de mensajes</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section><section class="tag"><h2>resenas</h2><p class="tag-desc">Endpoints de resenas.</p>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/resenas</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Listar resenas</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#49cc90;--bg:#e8f6f0">
+          <div class="op-head">
+            <span class="method">POST</span>
+            <code class="path">/api/resenas</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Crear un registro en resenas</p>
+          
+          
+          
+          <p class="resp"><strong>Respuestas:</strong> 201</p>
+        </article>
+        <article class="op" style="--c:#61affe;--bg:#e8f4fd">
+          <div class="op-head">
+            <span class="method">GET</span>
+            <code class="path">/api/resenas/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Obtener un registro de resenas</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#50e3c2;--bg:#e7f8f4">
+          <div class="op-head">
+            <span class="method">PATCH</span>
+            <code class="path">/api/resenas/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Actualizar un registro de resenas</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article>
+        <article class="op" style="--c:#f93e3e;--bg:#fdecec">
+          <div class="op-head">
+            <span class="method">DELETE</span>
+            <code class="path">/api/resenas/{id}</code>
+            <span class="lock">JWT</span>
+          </div>
+          <p class="summary">Eliminar un registro de resenas</p>
+          
+          
+            <div class="block"><h4>Parámetros</h4>
+            <table><thead><tr><th>Nombre</th><th>En</th><th>Req.</th><th>Tipo</th></tr></thead>
+            <tbody><tr><td>id</td><td>path</td><td>sí</td><td>string</td></tr></tbody></table></div>
+          
+          <p class="resp"><strong>Respuestas:</strong> 200</p>
+        </article></section>
+</body>
+</html>

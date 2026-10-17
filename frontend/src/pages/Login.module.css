@@ -1,0 +1,118 @@
+.toast {
+  position: fixed;
+  top: 16px;
+  right: 16px;
+  z-index: 40;
+  display: flex;
+  align-items: flex-start;
+  gap: var(--space-3);
+  width: min(360px, calc(100vw - 32px));
+  padding: var(--space-4);
+  background: #ffffff;
+  border: 1px solid var(--color-accent-light);
+  border-radius: var(--radius-md);
+  box-shadow: 0 10px 28px rgba(15, 40, 39, 0.12);
+}
+
+.toastIn {
+  animation: toastIn 280ms ease forwards;
+}
+
+.toastOut {
+  animation: toastOut 280ms ease forwards;
+}
+
+.toastIcon {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 36px;
+  height: 36px;
+  flex-shrink: 0;
+  border-radius: 50%;
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.toastCopy {
+  min-width: 0;
+}
+
+.toastTitle {
+  font-family: var(--font-poppins);
+  font-weight: var(--font-weight-semibold);
+  font-size: var(--text-sm);
+  color: var(--color-primary-dark);
+  margin-bottom: 2px;
+  line-height: 1.35;
+}
+
+.toastText {
+  font-family: var(--font-nunito);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--text-sm);
+  color: var(--color-text);
+  line-height: 1.45;
+}
+
+.toastEmail {
+  font-family: var(--font-poppins);
+  font-weight: var(--font-weight-medium);
+  color: var(--color-primary-dark);
+  word-break: break-word;
+}
+
+@keyframes toastIn {
+  from {
+    opacity: 0;
+    transform: translateY(-10px) translateX(12px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+}
+
+@keyframes toastOut {
+  from {
+    opacity: 1;
+    transform: translateY(0) translateX(0);
+  }
+  to {
+    opacity: 0;
+    transform: translateY(-8px) translateX(12px);
+  }
+}
+
+.options {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--space-3);
+  flex-wrap: wrap;
+}
+
+.forgotLink {
+  font-family: var(--font-poppins);
+  font-weight: var(--font-weight-regular);
+  font-size: var(--text-sm);
+  color: var(--color-primary);
+  transition: color var(--transition);
+}
+
+.forgotLink:hover {
+  color: var(--color-primary-dark);
+}
+
+.forgotLink:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 2px;
+  border-radius: var(--radius-sm);
+}
+
+@media (max-width: 480px) {
+  .options {
+    flex-direction: column;
+    align-items: flex-start;
+  }
+}

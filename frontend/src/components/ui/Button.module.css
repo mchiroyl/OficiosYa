@@ -1,0 +1,93 @@
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-2);
+  width: 100%;
+  height: var(--input-height);
+  padding: 0 var(--space-6);
+  font-family: var(--font-poppins);
+  font-weight: var(--font-weight-medium);
+  font-size: var(--text-sm);
+  border-radius: var(--radius-md);
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition:
+    background-color var(--transition),
+    border-color var(--transition),
+    color var(--transition),
+    box-shadow var(--transition),
+    transform var(--transition);
+}
+
+.button:focus {
+  outline: none;
+}
+
+.button:focus-visible {
+  box-shadow: var(--shadow-focus);
+}
+
+.button:active:not(:disabled) {
+  transform: scale(0.985);
+}
+
+.button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+/* Primary */
+.primary {
+  background-color: var(--color-primary);
+  color: var(--color-white);
+}
+
+.primary:hover:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+.primary:active:not(:disabled) {
+  background-color: var(--color-primary-dark);
+}
+
+/* Outline */
+.outline {
+  background-color: var(--color-card);
+  color: var(--color-text);
+  border-color: var(--color-border);
+}
+
+.outline:hover:not(:disabled) {
+  border-color: var(--color-primary);
+  background-color: var(--color-bg-light);
+}
+
+.outline:active:not(:disabled) {
+  background-color: var(--color-accent-light);
+}
+
+.icon {
+  display: flex;
+  align-items: center;
+}
+
+.loading {
+  position: relative;
+  pointer-events: none;
+}
+
+.spinnerWrap {
+  position: absolute;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.spinnerWrap :global(.spinner) {
+  animation: spin 0.7s linear infinite;
+}
+
+.hiddenText {
+  visibility: hidden;
+}

@@ -1,0 +1,67 @@
+import { Body, Controller, Get, Param, ParseIntPipe, Post, Put, UploadedFiles, UseGuards, UseInterceptors } from '@nestjs/common';
+import { FilesInterceptor } from '@nestjs/platform-express';
+import { ApiBearerAuth, ApiOperation, ApiResponse, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/current-user.decorator';
+import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { UsuarioRow } from '../common/usuario.util';
+import { CreateRequestDto } from './dto/create-request.dto';
+import { UpdateRequestStatusDto } from './dto/update-request-status.dto';
+import { RequestsService } from './requests.service';
+
+@ApiTags('Requests')
+@ApiBearerAuth('access-token')
+@UseGuards(JwtAuthGuard)
+@Controller('requests')
+export class RequestsController {
+  constructor(private readonly requests: RequestsService) {}
+
+  @Get('client')
+  @ApiOperation({ summary: 'Historial del cliente autenticado, con servicio y reseña' })
+  listClient(@CurrentUser() user: UsuarioRow) {
+    return this.requests.listClient(user);
+  }
+
+  @Get('worker')
+  @ApiOperation({ summary: 'Solicitudes del trabajador autenticado, con cliente y reseña' })
+  listWorker(@CurrentUser() user: UsuarioRow) {
+    return this.requests.listWorker(user);
+  }
+
+  @Post('create')
+  @ApiOperation({
+    summary: 'Crear una nueva solicitud de servicio (HU-13)',
+    description:
+      'El cliente autenticado envía una solicitud. Se inserta en solicitud_servicio con estado inicial Enviada.',
+  })
+  create(@CurrentUser() user: UsuarioRow, @Body() dto: CreateRequestDto) {
+    return this.requests.create(user, dto);
+  }
+
+  @Post(':id/images')
+  @UseInterceptors(FilesInterceptor('files', 3, { limits: { fileSize: 8 * 1024 * 1024 } }))
+  @ApiOperation({ summary: 'Adjuntar hasta tres imágenes de referencia a una solicitud' })
+  uploadImages(
+    @CurrentUser() user: UsuarioRow,
+    @Param('id', ParseIntPipe) id: number,
+    @UploadedFiles() files: Array<{ buffer: Buffer; mimetype?: string; originalname?: string }>,
+  ) {
+    return this.requests.attachImages(user, id, files || []);
+  }
+
+  @Put(':id/status')
+  @ApiOperation({
+    summary: 'Cambiar estado de una solicitud (HU-14, HU-15)',
+    description:
+      'Máquina de estados transaccional. Aceptar/Rechazar: trabajador sobre Enviada. Cancelar: cliente sobre Enviada o Aceptada. Iniciar: trabajador sobre Aceptada. Finalizar: cliente o trabajador sobre Aceptada o En Proceso. Impide saltos inválidos y condiciones de carrera.',
+  })
+  @ApiResponse({ status: 400, description: 'Salto de estado inválido.' })
+  @ApiResponse({ status: 403, description: 'El actor no puede ejecutar esa acción.' })
+  @ApiResponse({ status: 409, description: 'La solicitud cambió de estado en paralelo.' })
+  updateStatus(
+    @CurrentUser() user: UsuarioRow,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: UpdateRequestStatusDto,
+  ) {
+    return this.requests.updateStatus(user, id, dto);
+  }
+}

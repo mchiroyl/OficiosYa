@@ -1,0 +1,52 @@
+.rating {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--space-1);
+  flex-wrap: wrap;
+  font-family: var(--font-poppins);
+  min-width: 0;
+}
+
+.star {
+  display: inline-flex;
+  color: #e6a817;
+  flex-shrink: 0;
+}
+
+.value {
+  font-weight: var(--font-weight-semibold);
+  color: var(--color-text);
+}
+
+.count {
+  color: var(--color-text-secondary);
+  font-weight: var(--font-weight-regular);
+}
+
+.sm {
+  font-size: var(--text-sm);
+  gap: 2px;
+}
+
+.sm .star :global(svg) {
+  width: 14px;
+  height: 14px;
+}
+
+.md {
+  font-size: var(--text-sm);
+}
+
+.md .star :global(svg) {
+  width: 16px;
+  height: 16px;
+}
+
+.lg {
+  font-size: var(--text-base);
+}
+
+.lg .star :global(svg) {
+  width: 18px;
+  height: 18px;
+}
