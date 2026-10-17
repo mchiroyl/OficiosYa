@@ -55,13 +55,13 @@ export default function CoverageMap({ coverage }) {
         >
           <defs>
             <linearGradient id="mapSky" x1="0" y1="0" x2="0" y2="1">
-              <stop offset="0%" stopColor="#d8f0ee" />
-              <stop offset="100%" stopColor="#eef7f6" />
+              <stop offset="0%" stopColor="#d7ebff" />
+              <stop offset="100%" stopColor="#edf6ff" />
             </linearGradient>
             <radialGradient id="coverageFill" cx="50%" cy="48%" r="42%">
-              <stop offset="0%" stopColor="#299d98" stopOpacity="0.28" />
-              <stop offset="70%" stopColor="#83d0cc" stopOpacity="0.16" />
-              <stop offset="100%" stopColor="#83d0cc" stopOpacity="0" />
+              <stop offset="0%" stopColor="#0065f4" stopOpacity="0.28" />
+              <stop offset="70%" stopColor="#84c7ff" stopOpacity="0.16" />
+              <stop offset="100%" stopColor="#84c7ff" stopOpacity="0" />
             </radialGradient>
           </defs>
 
@@ -75,7 +75,7 @@ export default function CoverageMap({ coverage }) {
               y1="20"
               x2={40 + i * 70}
               y2="340"
-              stroke="#c9e6e3"
+              stroke="#d7ebff"
               strokeWidth="1.5"
             />
           ))}
@@ -86,18 +86,18 @@ export default function CoverageMap({ coverage }) {
               y1={30 + i * 55}
               x2="620"
               y2={30 + i * 55}
-              stroke="#c9e6e3"
+              stroke="#d7ebff"
               strokeWidth="1.5"
             />
           ))}
 
           {/* Bloques urbanos */}
-          <rect x="90" y="70" width="70" height="45" rx="4" fill="#b8ddd9" opacity="0.55" />
-          <rect x="200" y="120" width="90" height="55" rx="4" fill="#a9d6d2" opacity="0.5" />
-          <rect x="360" y="80" width="80" height="50" rx="4" fill="#b8ddd9" opacity="0.55" />
-          <rect x="450" y="180" width="100" height="60" rx="4" fill="#a9d6d2" opacity="0.45" />
-          <rect x="120" y="220" width="110" height="50" rx="4" fill="#b8ddd9" opacity="0.5" />
-          <rect x="280" y="250" width="75" height="40" rx="4" fill="#a9d6d2" opacity="0.45" />
+          <rect x="90" y="70" width="70" height="45" rx="4" fill="#84c7ff" opacity="0.55" />
+          <rect x="200" y="120" width="90" height="55" rx="4" fill="#84c7ff" opacity="0.5" />
+          <rect x="360" y="80" width="80" height="50" rx="4" fill="#84c7ff" opacity="0.55" />
+          <rect x="450" y="180" width="100" height="60" rx="4" fill="#84c7ff" opacity="0.45" />
+          <rect x="120" y="220" width="110" height="50" rx="4" fill="#84c7ff" opacity="0.5" />
+          <rect x="280" y="250" width="75" height="40" rx="4" fill="#84c7ff" opacity="0.45" />
 
           {/* Área de cobertura */}
           <circle cx="320" cy="175" r="120" fill="url(#coverageFill)" />
@@ -106,7 +106,7 @@ export default function CoverageMap({ coverage }) {
             cy="175"
             r="118"
             fill="none"
-            stroke="#299d98"
+            stroke="#0065f4"
             strokeWidth="2.5"
             strokeDasharray="8 6"
             opacity="0.85"
@@ -116,10 +116,10 @@ export default function CoverageMap({ coverage }) {
           <g transform="translate(320 145)">
             <path
               d="M0 0c-14 0-26 11-26 26 0 18 26 40 26 40s26-22 26-40c0-15-12-26-26-26z"
-              fill="#247c7c"
+              fill="#0065f4"
             />
             <circle cx="0" cy="24" r="9" fill="#ffffff" />
-            <circle cx="0" cy="24" r="4.5" fill="#299d98" />
+            <circle cx="0" cy="24" r="4.5" fill="#0065f4" />
           </g>
 
           {/* Etiqueta */}
@@ -137,7 +137,7 @@ export default function CoverageMap({ coverage }) {
               x="0"
               y="5"
               textAnchor="middle"
-              fill="#247c7c"
+              fill="#0065f4"
               fontFamily="Poppins, sans-serif"
               fontSize="12"
               fontWeight="600"

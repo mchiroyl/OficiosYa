@@ -207,6 +207,10 @@
   line-height: 1.4;
 }
 
+.serviceItem > div { display: grid; gap: 4px; }
+.serviceItem strong { font-weight: 700; }
+.serviceItem p { margin: 0; }
+
 .serviceIcon {
   display: inline-flex;
   align-items: center;

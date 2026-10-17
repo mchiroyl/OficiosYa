@@ -25,6 +25,8 @@ const DIAS = [
 ];
 
 const EMPTY_HORARIO = { dia: 'lunes', desde: '08:00', hasta: '17:00' };
+const MAX_DPI_FILE_SIZE = 8 * 1024 * 1024;
+const INVALID_RATE_MESSAGE = 'Los montos de tarifa deben ser mayores o iguales a Q 0.';
 
 const EMPTY_TARIFAS = {
   tipo: 'por_hora',
@@ -176,6 +178,10 @@ export default function WorkerProfile() {
       setError('Adjunta el frente y el reverso de tu DPI.');
       return;
     }
+    if ([frente, reverso].some((file) => file.size > MAX_DPI_FILE_SIZE)) {
+      setError('El archivo supera el límite permitido de 8 MB. Elige una imagen más pequeña.');
+      return;
+    }
     if (numeroDpi && !/^\d{13}$/.test(numeroDpi.replace(/\D/g, ''))) {
       setError('El número de DPI debe tener 13 dígitos.');
       return;
@@ -205,6 +211,10 @@ export default function WorkerProfile() {
     if (showMontos) {
       const desde = parseNumber(tarifas.monto_desde);
       const hasta = parseNumber(tarifas.monto_hasta);
+      if ((desde != null && desde < 0) || (hasta != null && hasta < 0)) {
+        setError(INVALID_RATE_MESSAGE);
+        return;
+      }
       if (desde != null && hasta != null && hasta < desde) {
         setError('El monto hasta no puede ser menor que el monto desde.');
         return;
@@ -241,8 +251,8 @@ export default function WorkerProfile() {
 
       await updateWorkerProfile(payload, token);
       await updateWorkerContact({ telefono: contacto.telefono }, token);
-      setSuccess('Perfil actualizado correctamente. Regresando al panel…');
-      window.setTimeout(() => navigate('/', { replace: true }), 900);
+      setSuccess('Perfil actualizado. Ahora puedes detallar cada servicio, su tarifa y horario.');
+      window.setTimeout(() => navigate('/worker/content', { replace: true }), 900);
     } catch (err) {
       setError(err.message || 'No se pudo guardar los cambios.');
     } finally {
@@ -266,9 +276,9 @@ export default function WorkerProfile() {
       <div className={styles.inner}>
         <BackLink to="/">Volver al menú principal</BackLink>
         <header className={styles.header}>
-          <h1 className={styles.title}>Perfil y disponibilidad</h1>
+          <h1 className={styles.title}>Datos del perfil y verificación</h1>
           <p className={styles.subtitle}>
-            Configura tarifas, horarios, cobertura y el estado público Disponible/Ocupado.
+            Administra disponibilidad, contacto y verificación. Configura el precio y horario de cada servicio en Mi oferta y contenido.
           </p>
         </header>
 
@@ -406,7 +416,7 @@ export default function WorkerProfile() {
             </section>
 
             <section>
-              <h2 className={styles.sectionTitle}>Tarifas</h2>
+              <h2 className={styles.sectionTitle}>Tarifa general de referencia</h2>
             </section>
 
             <div>
@@ -442,9 +452,10 @@ export default function WorkerProfile() {
                     className={styles.input}
                     placeholder="50"
                     value={tarifas.monto_desde}
-                    onChange={(e) =>
-                      setTarifas((prev) => ({ ...prev, monto_desde: e.target.value }))
-                    }
+                    onChange={(event) => {
+                      setError('');
+                      setTarifas((prev) => ({ ...prev, monto_desde: event.target.value }));
+                    }}
                     disabled={saving}
                   />
                 </div>
@@ -460,9 +471,10 @@ export default function WorkerProfile() {
                     className={styles.input}
                     placeholder="120"
                     value={tarifas.monto_hasta}
-                    onChange={(e) =>
-                      setTarifas((prev) => ({ ...prev, monto_hasta: e.target.value }))
-                    }
+                    onChange={(event) => {
+                      setError('');
+                      setTarifas((prev) => ({ ...prev, monto_hasta: event.target.value }));
+                    }}
                     disabled={saving}
                   />
                 </div>
@@ -500,8 +512,8 @@ export default function WorkerProfile() {
             </div>
 
             <section>
-              <h2 className={styles.sectionTitle}>Horarios</h2>
-              <p className={styles.hint}>Indica los turnos en los que atiendes solicitudes.</p>
+              <h2 className={styles.sectionTitle}>Horario general del perfil</h2>
+              <p className={styles.hint}>Usa Mi oferta y contenido para definir un horario distinto para cada servicio.</p>
               {horarios.length === 0 ? (
                 <p className={styles.message}>Aún no hay horarios. Agrega al menos uno si quieres publicarlos.</p>
               ) : (

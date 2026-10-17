@@ -267,9 +267,13 @@ AS $$
         OR EXISTS (
           SELECT 1
           FROM servicio_ofrecido s
+          JOIN categoria c ON c.id_categoria = s.id_categoria
           WHERE s.id_perfil = p.id_perfil
             AND s.activo = true
-            AND lower(s.nombre) LIKE '%' || lower(prm.q) || '%'
+            AND (
+              lower(s.nombre) LIKE '%' || lower(prm.q) || '%'
+              OR lower(c.nombre) LIKE '%' || lower(prm.q) || '%'
+            )
         )
       )
       AND (

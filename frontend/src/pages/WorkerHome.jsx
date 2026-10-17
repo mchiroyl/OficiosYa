@@ -109,12 +109,12 @@ export default function WorkerHome() {
             <button
               type="button"
               className={menu.tile}
-              onClick={() => navigate('/worker/profile')}
+              onClick={() => navigate('/worker/content')}
             >
               <span className={menu.tileIcon}>O</span>
               <span className={menu.tileBody}>
-                <strong>Mi oferta</strong>
-                <small>Tarifas, zonas, horarios y portafolio</small>
+                <strong>Mi oferta y contenido</strong>
+                <small>Servicios, tarifas, horarios y portafolio</small>
               </span>
             </button>
             <button

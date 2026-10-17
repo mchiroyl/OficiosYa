@@ -99,7 +99,7 @@ export default function AdminDashboard() {
       {
         label: 'Solicitudes',
         data: metrics.topCats.map(([, count]) => count),
-        backgroundColor: '#299d98',
+        backgroundColor: '#0065f4',
         borderRadius: 8,
       },
     ],
@@ -110,7 +110,7 @@ export default function AdminDashboard() {
     datasets: [
       {
         data: [metrics.clientes, metrics.trabajadores],
-        backgroundColor: ['#83d0cc', '#247c7c'],
+        backgroundColor: ['#84c7ff', '#0065f4'],
       },
     ],
   };

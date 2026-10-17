@@ -12,7 +12,7 @@
 }
 
 .sectionHead p {
-  color: #526b67;
+  color: #979797;
   font-size: 14px;
 }
 
@@ -29,7 +29,7 @@
   text-align: left;
   padding: 18px 16px;
   border-radius: 16px;
-  border: 1px solid #dbe7e5;
+  border: 1px solid #d9d9d9;
   background: #fff;
   cursor: pointer;
   transition: border-color 150ms ease, transform 150ms ease, box-shadow 150ms ease;
@@ -38,13 +38,13 @@
 }
 
 .tile:hover {
-  border-color: #299d98;
+  border-color: #0065f4;
   box-shadow: 0 8px 24px rgba(36, 124, 124, 0.12);
   transform: translateY(-2px);
 }
 
 .tile:focus-visible {
-  outline: 3px solid #c2ece9;
+  outline: 3px solid #d7ebff;
   outline-offset: 2px;
 }
 
@@ -54,8 +54,8 @@
   border-radius: 14px;
   display: grid;
   place-items: center;
-  background: #e1f1ec;
-  color: #247c7c;
+  background: #d7ebff;
+  color: #0065f4;
   font-weight: 700;
   font-size: 20px;
   flex-shrink: 0;
@@ -72,7 +72,7 @@
 }
 
 .tileBody small {
-  color: #526b67;
+  color: #979797;
   font-size: 12px;
 }
 
