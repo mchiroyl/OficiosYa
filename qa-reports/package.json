@@ -1,0 +1,13 @@
+{
+  "name": "oficiosya-qa-reports",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "setup:accounts": "node scripts/setup-worker-accounts.mjs",
+    "report:worker": "node scripts/build-worker-report.mjs"
+  },
+  "dependencies": {
+    "docx": "^9.11.0"
+  }
+}
