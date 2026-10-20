@@ -97,6 +97,11 @@ export default function WorkerInbox() {
           <label className={styles.switch} title="Alternar Disponible / Ocupado">
             <input
               type="checkbox"
+              aria-label={
+                disponibilidad === 'Disponible'
+                  ? 'Disponible. Pulsa para marcar como ocupado'
+                  : 'Ocupado. Pulsa para marcar como disponible'
+              }
               checked={disponibilidad === 'Disponible'}
               disabled={toggling}
               onChange={toggleAvailability}
@@ -109,7 +114,10 @@ export default function WorkerInbox() {
 
         {error && (
           <p className={styles.error} role="alert">
-            {error}{' '}<button type="button" onClick={load}>Reintentar</button>
+            {error}{' '}
+            <button type="button" className={styles.ghost} onClick={load}>
+              Recargar bandeja
+            </button>
           </p>
         )}
 
@@ -125,7 +133,7 @@ export default function WorkerInbox() {
             {visible.map((item) => {
               const estado = item.estado || 'Enviada';
               const canDecide = estado === 'Enviada';
-              const canFinish = estado === 'Aceptada' || estado === 'En Proceso';
+              const canFinish = estado === 'En Proceso';
               const canChat = ['Aceptada', 'En Proceso', 'Finalizada'].includes(estado);
 
               return (
@@ -133,15 +141,14 @@ export default function WorkerInbox() {
                   <div className={styles.cardTop}>
                     <div>
                       <p className={styles.id}>#{item.id_solicitud}</p>
-                      <h2>{item.descripcion || 'Solicitud de servicio'}</h2>
+                      <h2>{item.servicio?.nombre || `Solicitud #${item.id_solicitud}`}</h2>
                     </div>
                     <StatusBadge estado={estado} />
                   </div>
                   <p className={styles.meta}>
-                    {item.ubicacion_aprox ? `Ubicación: ${item.ubicacion_aprox}` : 'Sin ubicación'}
                     {item.fecha_deseada
-                      ? ` · ${new Date(item.fecha_deseada).toLocaleString('es-GT')}`
-                      : ''}
+                      ? new Date(item.fecha_deseada).toLocaleString('es-GT')
+                      : 'Sin fecha deseada'}
                   </p>
 
                   {rejectId === item.id_solicitud && (
@@ -151,6 +158,7 @@ export default function WorkerInbox() {
                       <textarea id={`motivo-${item.id_solicitud}`} rows={3} value={motivo}
                         onChange={(event) => setMotivo(event.target.value)}
                         placeholder="Explica brevemente por qué no puedes tomar el trabajo" />
+                      <p className={styles.hint}>El motivo debe tener al menos 5 caracteres.</p>
                       <div className={styles.actions}>
                         <button type="button" className={styles.ghost} onClick={() => { setRejectId(null); setMotivo(''); }}>Cancelar</button>
                         <button type="button" className={styles.primary} disabled={busyId === item.id_solicitud || motivo.trim().length < 5}
@@ -172,7 +180,11 @@ export default function WorkerInbox() {
                       onClick={() => act(item.id_solicitud, 'Iniciar')}>Iniciar trabajo</button>}
                     {canFinish && <button type="button" className={styles.primary}
                       disabled={busyId === item.id_solicitud}
-                      onClick={() => act(item.id_solicitud, 'Finalizar')}>Confirmar cierre</button>}
+                      onClick={() => {
+                        if (window.confirm('¿Confirmas el cierre de este trabajo? Esta acción no se puede deshacer.')) {
+                          act(item.id_solicitud, 'Finalizar');
+                        }
+                      }}>Confirmar cierre</button>}
                   </div>
                 </li>
               );

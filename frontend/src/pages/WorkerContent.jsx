@@ -107,6 +107,11 @@ export default function WorkerContent() {
 
   useEffect(() => { load(); }, [load]);
 
+  useEffect(() => {
+    if (!error && !success) return;
+    document.getElementById('worker-content-feedback')?.scrollIntoView({ behavior: 'smooth', block: 'center' });
+  }, [error, success]);
+
   const run = async (key, action, message) => {
     setBusy(key); setError(''); setSuccess('');
     try {
@@ -189,11 +194,24 @@ export default function WorkerContent() {
   const upload = (event) => {
     event.preventDefault();
     if (!file) { setError('Selecciona una imagen.'); return; }
+    if (file.size > 8 * 1024 * 1024) {
+      setError('La imagen supera el máximo de 8 MB.');
+      return;
+    }
+    if (file.type && !/^image\/(jpeg|png|webp|gif)$/i.test(file.type)) {
+      setError('Solo se permiten imágenes JPG, PNG, WebP o GIF.');
+      return;
+    }
     run('photo-new', async () => {
       await uploadPortfolioPhoto({ file, titulo: photoTitle.trim(), descripcion: photoDescription.trim(), token });
       setFile(null); setPhotoTitle(''); setPhotoDescription('');
       event.target.reset();
     }, 'Foto agregada al portafolio.');
+  };
+
+  const confirmDelete = (message, action) => {
+    if (!window.confirm(message)) return;
+    action();
   };
 
   return (
@@ -205,8 +223,8 @@ export default function WorkerContent() {
           <h1>Mi oferta y contenido</h1>
           <p>Administra tus servicios, define una tarifa y un horario para cada uno, y actualiza tu portafolio.</p>
         </header>
-        {error && <p className={styles.error} role="alert">{error}</p>}
-        {success && <p className={styles.success} role="status">{success}</p>}
+        {error && <p id="worker-content-feedback" className={styles.error} role="alert">{error}</p>}
+        {success && <p id="worker-content-feedback" className={styles.success} role="status">{success}</p>}
         {loading ? <p className={styles.loading}>Cargando tu oferta…</p> : <>
           <section className={styles.card} aria-labelledby="offered-services-title">
             <div className={styles.sectionHead}>
@@ -284,7 +302,7 @@ export default function WorkerContent() {
                 <div className={styles.actions}>
                   <button type="button" disabled={Boolean(busy)} onClick={() => editService(item)}>Editar</button>
                   <button type="button" disabled={Boolean(busy)} onClick={() => run(`service-${item.id_servicio}`, () => updateService(item.id_servicio, { activo: !item.activo }, token), item.activo ? 'Servicio pausado.' : 'Servicio reactivado.')}>{item.activo ? 'Pausar' : 'Reactivar'}</button>
-                  <button type="button" className={styles.danger} disabled={Boolean(busy)} onClick={() => run(`service-${item.id_servicio}`, () => deleteService(item.id_servicio, token), 'Servicio eliminado.')}>Eliminar</button>
+                  <button type="button" className={styles.danger} disabled={Boolean(busy)} onClick={() => confirmDelete('¿Eliminar este servicio? Esta acción no se puede deshacer.', () => run(`service-${item.id_servicio}`, () => deleteService(item.id_servicio, token), 'Servicio eliminado.'))}>Eliminar</button>
                 </div>
               </li>;
             })}</ul> : <p className={styles.empty}>Todavía no agregas servicios. Completa el formulario para publicar el primero.</p>}
@@ -303,7 +321,7 @@ export default function WorkerContent() {
             <p className={styles.sectionDescription}>Muestra fotos de trabajos que ya realizaste.</p>
             <form className={styles.form} onSubmit={upload}>
               <div className={styles.fields}>
-                <label>Fotografía<input type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => setFile(e.target.files?.[0] || null)} /></label>
+                <label>Fotografía<input aria-label="Fotografía del portafolio" type="file" accept="image/jpeg,image/png,image/webp,image/gif" onChange={(e) => setFile(e.target.files?.[0] || null)} /></label>
                 <label>Título del trabajo<input value={photoTitle} onChange={(e) => setPhotoTitle(e.target.value)} /></label>
                 <label className={styles.fullWidth}>Descripción<textarea value={photoDescription} onChange={(e) => setPhotoDescription(e.target.value)} /></label>
               </div>
@@ -312,7 +330,7 @@ export default function WorkerContent() {
             <div className={styles.gallery}>{photos.map((item) => <article key={item.id_elemento}>
               <img src={item.imagen_thumb_url || item.imagen_url} alt={item.titulo || 'Trabajo realizado'} loading="lazy" />
               <strong>{item.titulo}</strong><p>{item.descripcion}</p>
-              <button type="button" className={styles.danger} onClick={() => run(`photo-${item.id_elemento}`, () => deletePortfolioPhoto(item.id_elemento, token), 'Foto eliminada.')}>Eliminar</button>
+              <button type="button" className={styles.danger} onClick={() => confirmDelete('¿Eliminar esta foto del portafolio? Esta acción no se puede deshacer.', () => run(`photo-${item.id_elemento}`, () => deletePortfolioPhoto(item.id_elemento, token), 'Foto eliminada.'))}>Eliminar</button>
             </article>)}</div>
           </section>
 
@@ -322,8 +340,10 @@ export default function WorkerContent() {
               const answered = item.respuesta_trabajador || item.respuesta;
               return <li key={item.id_resena} className={styles.reviewItem}><div><strong className={styles.stars}>{'★'.repeat(Number(item.calificacion) || 0)}</strong><p>{item.comentario || 'Sin comentario'}</p>{answered && <p><b>Tu respuesta:</b> {answered}</p>}</div>
                 {!answered && <form className={styles.reply} onSubmit={(e) => { e.preventDefault(); run(`review-${item.id_resena}`, () => replyToReview(item.id_resena, reply[item.id_resena] || '', token), 'Respuesta publicada.'); }}>
-                  <input minLength="2" maxLength="1000" required placeholder="Responder públicamente" value={reply[item.id_resena] || ''} onChange={(e) => setReply((prev) => ({ ...prev, [item.id_resena]: e.target.value }))} />
-                  <button disabled={Boolean(busy)}>Responder</button>
+                  <label className={styles.fullWidth}>Respuesta pública
+                    <input minLength="2" maxLength="1000" required placeholder="Escribe tu respuesta" value={reply[item.id_resena] || ''} onChange={(e) => setReply((prev) => ({ ...prev, [item.id_resena]: e.target.value }))} />
+                  </label>
+                  <button type="submit" disabled={Boolean(busy)}>Responder</button>
                 </form>}
               </li>;
             })}</ul> : <p className={styles.empty}>Cuando recibas reseñas, aparecerán aquí.</p>}

@@ -4,12 +4,14 @@ import { useAuth } from '../auth/AuthContext';
 import { getWorkerProfile, updateAvailability } from '../api/worker';
 import { listWorkerRequests } from '../api/requests';
 import { useNavigate } from '../router';
+import { useMode } from '../mode/ModeContext';
 import styles from './Home.module.css';
 import dash from './Dashboard.module.css';
 import menu from './ClientHome.module.css';
 
 export default function WorkerHome() {
   const navigate = useNavigate();
+  const { setMode } = useMode();
   const { session } = useAuth();
   const token = session?.accessToken;
   const [disponibilidad, setDisponibilidad] = useState('Disponible');
@@ -79,6 +81,11 @@ export default function WorkerHome() {
           <label className={dash.switch}>
             <input
               type="checkbox"
+              aria-label={
+                disponibilidad === 'Disponible'
+                  ? 'Disponible. Pulsa para marcar como ocupado'
+                  : 'Ocupado. Pulsa para marcar como disponible'
+              }
               checked={disponibilidad === 'Disponible'}
               disabled={toggling}
               onChange={toggleAvailability}
@@ -120,7 +127,10 @@ export default function WorkerHome() {
             <button
               type="button"
               className={menu.tile}
-              onClick={() => navigate('/mis-solicitudes')}
+              onClick={() => {
+                setMode('client');
+                navigate('/mis-solicitudes');
+              }}
             >
               <span className={menu.tileIcon}>C</span>
               <span className={menu.tileBody}>
@@ -131,7 +141,7 @@ export default function WorkerHome() {
             <button
               type="button"
               className={menu.tile}
-              onClick={() => navigate('/worker/profile')}
+              onClick={() => navigate('/worker/profile#verificacion-dpi')}
             >
               <span className={menu.tileIcon}>V</span>
               <span className={menu.tileBody}>

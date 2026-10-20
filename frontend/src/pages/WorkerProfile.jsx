@@ -1,9 +1,9 @@
 import { useEffect, useState } from 'react';
+import AppHeader from '../components/AppHeader';
 import BackLink from '../components/BackLink';
 import Button from '../components/ui/Button';
 import Checkbox from '../components/ui/Checkbox';
 import { useAuth } from '../auth/AuthContext';
-import { useNavigate } from '../router';
 import { getMyDpi, submitDpi } from '../api/identity';
 import { getWorkerContact, getWorkerProfile, listZonas, updateWorkerAvailability, updateWorkerContact, updateWorkerProfile } from '../api/worker';
 import styles from './WorkerProfile.module.css';
@@ -48,7 +48,6 @@ function toHHmm(value) {
 
 export default function WorkerProfile() {
   const { session } = useAuth();
-  const navigate = useNavigate();
   const token = session?.accessToken;
 
   const [loading, setLoading] = useState(true);
@@ -195,6 +194,7 @@ export default function WorkerProfile() {
       setDpi(saved);
       setFrente(null);
       setReverso(null);
+      setNumeroDpi('');
       setSuccess('Documentos enviados. Quedan en revisión privada.');
     } catch (err) {
       setError(err.message || 'No se pudieron enviar los documentos.');
@@ -251,8 +251,7 @@ export default function WorkerProfile() {
 
       await updateWorkerProfile(payload, token);
       await updateWorkerContact({ telefono: contacto.telefono }, token);
-      setSuccess('Perfil actualizado. Ahora puedes detallar cada servicio, su tarifa y horario.');
-      window.setTimeout(() => navigate('/worker/content', { replace: true }), 900);
+      setSuccess('Perfil actualizado correctamente.');
     } catch (err) {
       setError(err.message || 'No se pudo guardar los cambios.');
     } finally {
@@ -260,19 +259,33 @@ export default function WorkerProfile() {
     }
   };
 
+  useEffect(() => {
+    if (loading) return undefined;
+    if (window.location.hash !== '#verificacion-dpi') return undefined;
+    const timer = window.setTimeout(() => {
+      document.getElementById('verificacion-dpi')?.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }, 80);
+    return () => window.clearTimeout(timer);
+  }, [loading]);
+
   if (loading) {
     return (
-      <div className={styles.page}>
-        <div className={styles.inner}>
-          <BackLink to="/">Volver al menú principal</BackLink>
-          <div className={styles.loading}>Cargando perfil...</div>
+      <>
+        <AppHeader />
+        <div className={styles.page}>
+          <div className={styles.inner}>
+            <BackLink to="/">Volver al menú principal</BackLink>
+            <div className={styles.loading}>Cargando perfil...</div>
+          </div>
         </div>
-      </div>
+      </>
     );
   }
 
   return (
-    <div className={styles.page}>
+    <>
+      <AppHeader />
+      <div className={styles.page}>
       <div className={styles.inner}>
         <BackLink to="/">Volver al menú principal</BackLink>
         <header className={styles.header}>
@@ -343,7 +356,7 @@ export default function WorkerProfile() {
               </div>
             </section>
 
-            <section>
+            <section id="verificacion-dpi">
               <h2 className={styles.sectionTitle}>Verificación de identidad (DPI)</h2>
               <p className={styles.hint}>
                 El frente y el reverso se guardan en un bucket privado. El número no se almacena
@@ -620,5 +633,6 @@ export default function WorkerProfile() {
         </div>
       </div>
     </div>
+    </>
   );
 }

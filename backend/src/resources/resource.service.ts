@@ -1,4 +1,5 @@
 import { BadRequestException, ForbiddenException, Injectable, NotFoundException } from '@nestjs/common';
+import { UsuarioRow } from '../common/usuario.util';
 import { SupabaseService } from '../supabase/supabase.service';
 import { ResourceConfig } from './resources.config';
 
@@ -6,8 +7,11 @@ import { ResourceConfig } from './resources.config';
 export class ResourceService {
   constructor(private readonly supabase: SupabaseService) {}
 
-  async findAll(config: ResourceConfig, query: Record<string, string>) {
+  async findAll(config: ResourceConfig, query: Record<string, string>, user?: UsuarioRow) {
     this.assertReadable(config);
+    if (config.anonFilter && !user && !query[config.anonFilter]) {
+      return [];
+    }
     let builder = this.supabase.from(config.table).select('*');
 
     for (const [key, value] of Object.entries(query)) {
@@ -45,9 +49,12 @@ export class ResourceService {
     return this.sanitize(config, data);
   }
 
-  async create(config: ResourceConfig, body: Record<string, unknown>) {
+  async create(config: ResourceConfig, body: Record<string, unknown>, user?: UsuarioRow) {
     this.assertWritable(config);
-    const payload = this.stripHidden(config, body);
+    if (config.denyCreate) {
+      throw new ForbiddenException('Este recurso no se puede crear por esta vía.');
+    }
+    const payload = await this.applyOwnerOnCreate(config, this.stripHidden(config, body), user);
     const { data, error } = await this.supabase
       .from(config.table)
       .insert(payload)
@@ -71,17 +78,19 @@ export class ResourceService {
       return this.sanitize(config, retry);
     }
 
-    throw new BadRequestException(error?.message || 'No se pudo crear el recurso.');
+    throw this.mapWriteError(error?.message, 'No se pudo crear el recurso.');
   }
 
   async update(
     config: ResourceConfig,
     keys: Record<string, string | number>,
     body: Record<string, unknown>,
+    user?: UsuarioRow,
   ) {
     this.assertWritable(config);
-    await this.findOne(config, keys);
-    const payload = this.stripHidden(config, body);
+    const current = await this.findOne(config, keys);
+    await this.assertOwner(config, current as Record<string, unknown>, user);
+    const payload = this.stripOwnerFields(config, this.stripHidden(config, body));
 
     let builder = this.supabase.from(config.table).update(payload);
     for (const [key, value] of Object.entries(keys)) {
@@ -90,14 +99,15 @@ export class ResourceService {
 
     const { data, error } = await builder.select('*').single();
     if (error || !data) {
-      throw new BadRequestException(error?.message || 'No se pudo actualizar el recurso.');
+      throw this.mapWriteError(error?.message, 'No se pudo actualizar el recurso.');
     }
     return this.sanitize(config, data);
   }
 
-  async remove(config: ResourceConfig, keys: Record<string, string | number>) {
+  async remove(config: ResourceConfig, keys: Record<string, string | number>, user?: UsuarioRow) {
     this.assertWritable(config);
-    await this.findOne(config, keys);
+    const current = await this.findOne(config, keys);
+    await this.assertOwner(config, current as Record<string, unknown>, user);
 
     let builder = this.supabase.from(config.table).delete();
     for (const [key, value] of Object.entries(keys)) {
@@ -105,7 +115,7 @@ export class ResourceService {
     }
 
     const { error } = await builder;
-    if (error) throw new BadRequestException(error.message);
+    if (error) throw this.mapWriteError(error.message, 'No se pudo eliminar el recurso.');
     return { message: 'Recurso eliminado.' };
   }
 
@@ -135,7 +145,91 @@ export class ResourceService {
         'Los mensajes se envían por POST /api/chat/threads/:id/messages o el WebSocket /chat.',
       );
     }
+    if (config.table === 'portafolio') {
+      throw new ForbiddenException(
+        'Las fotos se suben con POST /api/portfolio/upload y se eliminan con DELETE /api/portfolio/{id}.',
+      );
+    }
+    if (config.table === 'bitacora') {
+      throw new ForbiddenException('La bitácora es de solo lectura.');
+    }
     throw new ForbiddenException('Este recurso no admite altas, cambios ni bajas por esta vía.');
+  }
+
+  private async applyOwnerOnCreate(
+    config: ResourceConfig,
+    payload: Record<string, unknown>,
+    user?: UsuarioRow,
+  ) {
+    if (!config.owner) return payload;
+    if (!user) throw new ForbiddenException('Debes iniciar sesión.');
+
+    if (config.owner.via === 'user') {
+      const requested = payload[config.owner.field];
+      if (requested != null && Number(requested) !== user.id_usuario) {
+        throw new ForbiddenException('No puedes crear recursos de otra cuenta.');
+      }
+      return { ...payload, [config.owner.field]: user.id_usuario };
+    }
+
+    const profileId = await this.findOwnProfileId(user.id_usuario);
+    if (!profileId) {
+      throw new ForbiddenException('Necesitas un perfil de trabajador.');
+    }
+    const requested = payload[config.owner.field];
+    if (requested != null && Number(requested) !== profileId) {
+      throw new ForbiddenException('No puedes crear recursos de otro trabajador.');
+    }
+    return { ...payload, [config.owner.field]: profileId };
+  }
+
+  private async assertOwner(
+    config: ResourceConfig,
+    row: Record<string, unknown>,
+    user?: UsuarioRow,
+  ) {
+    if (!config.owner) return;
+    if (!user) throw new ForbiddenException('Debes iniciar sesión.');
+
+    if (config.owner.via === 'user') {
+      if (Number(row[config.owner.field]) !== user.id_usuario) {
+        throw new ForbiddenException('No puedes modificar un recurso de otra cuenta.');
+      }
+      return;
+    }
+
+    const profileId = await this.findOwnProfileId(user.id_usuario);
+    if (!profileId || Number(row[config.owner.field]) !== profileId) {
+      throw new ForbiddenException('No puedes modificar un recurso de otro trabajador.');
+    }
+  }
+
+  private stripOwnerFields(config: ResourceConfig, payload: Record<string, unknown>) {
+    if (!config.owner) return payload;
+    const copy = { ...payload };
+    delete copy[config.owner.field];
+    delete copy.id_usuario;
+    delete copy.id_perfil;
+    return copy;
+  }
+
+  private async findOwnProfileId(idUsuario: number) {
+    const { data, error } = await this.supabase
+      .from('perfil_trabajador')
+      .select('id_perfil')
+      .eq('id_usuario', idUsuario)
+      .maybeSingle();
+    if (error) throw new BadRequestException(error.message);
+    return data ? Number((data as { id_perfil: number }).id_perfil) : null;
+  }
+
+  private mapWriteError(message: string | undefined, fallback: string): never {
+    if (/foreign key constraint|violates foreign key/i.test(message || '')) {
+      throw new BadRequestException(
+        'No se puede eliminar porque hay solicitudes u otros registros asociados.',
+      );
+    }
+    throw new BadRequestException(message || fallback);
   }
 
   private sanitize(config: ResourceConfig, data: unknown) {

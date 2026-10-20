@@ -10,6 +10,7 @@ import { BriefcaseIcon, CheckIcon, MapPinIcon } from '../components/icons/Icons'
 import { api } from '../api/client';
 import { listWorkerServices } from '../api/requests';
 import { listReviews } from '../api/reviews';
+import { getPublicProfile } from '../api/worker';
 import { useAuth } from '../auth/AuthContext';
 import styles from './PublicWorkerProfile.module.css';
 import { formatServiceRate, formatServiceSchedule, parseServiceContent } from '../lib/serviceContent';
@@ -53,9 +54,7 @@ export default function PublicWorkerProfile({ workerId }) {
       setLoading(true);
       setError('');
       try {
-        const profile = await api(`/perfiles-trabajador/${workerId}`, {
-          token: session?.accessToken,
-        });
+        const profile = await getPublicProfile(workerId, session?.accessToken);
         if (cancelled) return;
         setWorker(profile);
 

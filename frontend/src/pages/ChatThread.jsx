@@ -1,7 +1,9 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
+import AppHeader from '../components/AppHeader';
 import BackLink from '../components/BackLink';
 import Button from '../components/ui/Button';
 import { useAuth } from '../auth/AuthContext';
+import { displayStatus } from '../lib/requestStatus';
 import {
   connectChatSocket,
   listChatMessages,
@@ -47,13 +49,14 @@ export default function ChatThread() {
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
   const [error, setError] = useState('');
+  const [accessDenied, setAccessDenied] = useState(false);
   const scroller = useRef(null);
   const afterRef = useRef(0);
   const liveRef = useRef(false);
 
   const subtitle = useMemo(() => {
     if (!conversation) return `Solicitud #${idSolicitud}`;
-    return `${conversation.contraparte?.nombre || 'Usuario'} · Solicitud #${idSolicitud} · ${conversation.estado}`;
+    return `${conversation.contraparte?.nombre || 'Usuario'} · Solicitud #${idSolicitud} · ${displayStatus(conversation.estado)}`;
   }, [conversation, idSolicitud]);
 
   useEffect(() => {
@@ -103,6 +106,8 @@ export default function ChatThread() {
     const boot = async () => {
       setLoading(true);
       setError('');
+      setAccessDenied(false);
+      let denied = false;
       try {
         const [history, conversations] = await Promise.all([
           listChatMessages(idSolicitud, token, { limit: 100 }),
@@ -118,10 +123,16 @@ export default function ChatThread() {
           ) || null,
         );
       } catch (err) {
-        if (!cancelled) setError(err.message || 'No se pudo abrir el chat.');
+        denied = err.status === 403 || /no puedes ver el chat/i.test(err.message || '');
+        if (!cancelled) {
+          setError(err.message || 'No se pudo abrir el chat.');
+          setAccessDenied(denied);
+        }
       } finally {
         if (!cancelled) setLoading(false);
       }
+
+      if (denied || cancelled) return;
 
       socket = connectChatSocket(token);
 
@@ -169,7 +180,7 @@ export default function ChatThread() {
 
   const handleSubmit = async (event) => {
     event.preventDefault();
-    if (!token || sending) return;
+    if (!token || sending || accessDenied) return;
     const caption = texto.trim();
     if (!caption && !file) return;
 
@@ -190,13 +201,18 @@ export default function ChatThread() {
     }
   };
 
+  const composerLocked = sending || accessDenied;
+
   return (
-    <div className={styles.page}>
+    <>
+      <AppHeader />
+      <div className={styles.page}>
       <div className={`${styles.inner} ${styles.threadInner}`}>
         <BackLink to="/chat">Volver a mensajes</BackLink>
         <header className={styles.header}>
           <h1 className={styles.title}>Chat</h1>
           <p className={styles.subtitle}>{subtitle}</p>
+          {accessDenied ? null : (
           <p className={styles.transport} role="status">
             {transport === 'websocket'
               ? 'En vivo · WebSocket'
@@ -204,6 +220,7 @@ export default function ChatThread() {
                 ? 'En vivo · long-polling'
                 : 'Conectando…'}
           </p>
+          )}
         </header>
 
         <div className={styles.threadCard}>
@@ -249,13 +266,14 @@ export default function ChatThread() {
             </p>
           ) : null}
 
+          {accessDenied ? null : (
           <form className={styles.composer} onSubmit={handleSubmit}>
             <label className={styles.fileBtn}>
               Imagen
               <input
                 type="file"
                 accept="image/jpeg,image/png,image/webp,image/gif"
-                disabled={sending}
+                disabled={composerLocked}
                 onChange={(event) => setFile(event.target.files?.[0] || null)}
               />
             </label>
@@ -265,21 +283,23 @@ export default function ChatThread() {
               maxLength={4000}
               placeholder={file ? 'Pie de foto (opcional)' : 'Escribe un mensaje'}
               value={texto}
-              disabled={sending}
+              disabled={composerLocked}
               onChange={(event) => setTexto(event.target.value)}
             />
             <Button
               type="submit"
               className={styles.sendBtn}
               loading={sending}
-              disabled={sending || (!texto.trim() && !file)}
+              disabled={composerLocked || (!texto.trim() && !file)}
             >
               Enviar
             </Button>
           </form>
+          )}
           {file ? <p className={styles.fileName}>Imagen lista: {file.name}</p> : null}
         </div>
       </div>
     </div>
+    </>
   );
 }

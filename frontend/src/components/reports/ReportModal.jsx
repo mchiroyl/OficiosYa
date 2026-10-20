@@ -44,6 +44,10 @@ export default function ReportModal({ context, onClose }) {
       );
       setDone(true);
     } catch (err) {
+      if (err.status === 409) {
+        setDone(true);
+        return;
+      }
       setError(err.message || 'No se pudo enviar el reporte.');
     } finally {
       setBusy(false);
@@ -68,8 +72,9 @@ export default function ReportModal({ context, onClose }) {
         {done ? (
           <>
             <p className={styles.hint}>
-              Tu reporte fue enviado a los administradores. Gracias por ayudar a mantener la
-              comunidad segura.
+              Tu reporte fue enviado a los administradores. Si ya tenías uno pendiente sobre este
+              recurso, el equipo lo sigue revisando. Gracias por ayudar a mantener la comunidad
+              segura.
             </p>
             <div className={styles.actions}>
               <button type="button" className={styles.primary} onClick={onClose}>

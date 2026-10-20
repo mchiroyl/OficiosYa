@@ -11,14 +11,14 @@ export class TarifasDto {
 
   @ApiPropertyOptional({ example: 50 })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
+  @IsNumber({}, { message: 'El monto desde debe ser un número.' })
+  @Min(0, { message: 'El monto no puede ser negativo.' })
   monto_desde?: number;
 
   @ApiPropertyOptional({ example: 120 })
   @IsOptional()
-  @IsNumber()
-  @Min(0)
+  @IsNumber({}, { message: 'El monto hasta debe ser un número.' })
+  @Min(0, { message: 'El monto no puede ser negativo.' })
   monto_hasta?: number;
 
   @ApiPropertyOptional({ example: 'GTQ' })

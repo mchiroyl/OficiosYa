@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useRef, useState } from 'react';
 import Logo from '../components/Logo';
 import BackLink from '../components/BackLink';
 import Input from '../components/ui/Input';
@@ -96,6 +96,7 @@ export default function Register({ mode = 'client' }) {
   const [formError, setFormError] = useState('');
   const [errors, setErrors] = useState({ ...BASE_ERRORS, ...WORKER_ERRORS });
   const [touched, setTouched] = useState({ ...BASE_TOUCHED, ...WORKER_TOUCHED });
+  const submittingRef = useRef(false);
 
   const markTouched = (field) => {
     setTouched((prev) => ({ ...prev, [field]: true }));
@@ -142,6 +143,7 @@ export default function Register({ mode = 'client' }) {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
+    if (submittingRef.current || loading) return;
 
     const nextErrors = {
       name: validateName(name),
@@ -169,6 +171,7 @@ export default function Register({ mode = 'client' }) {
 
     if (Object.values(nextErrors).some(Boolean)) return;
 
+    submittingRef.current = true;
     setLoading(true);
     try {
       const data = await register({
@@ -219,6 +222,7 @@ export default function Register({ mode = 'client' }) {
           : error.message || 'No se pudo crear la cuenta.',
       );
     } finally {
+      submittingRef.current = false;
       setLoading(false);
     }
   };
@@ -367,7 +371,15 @@ export default function Register({ mode = 'client' }) {
           onToggleVisibility={() => setShowConfirmPassword((prev) => !prev)}
         />
 
-        <Button type="submit" loading={loading} disabled={loading}>
+        <Button
+          type="submit"
+          loading={loading}
+          disabled={loading}
+          onClick={(event) => {
+            event.preventDefault();
+            void handleSubmit(event);
+          }}
+        >
           Crear cuenta
         </Button>
       </form>

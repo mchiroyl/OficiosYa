@@ -38,5 +38,5 @@ export function listZonas() {
 }
 
 export function getPublicProfile(id, token) {
-  return api(`/perfiles-trabajador/${id}`, { token });
+  return api(`/worker/public/${id}`, { token });
 }

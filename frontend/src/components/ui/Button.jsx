@@ -25,12 +25,12 @@ export default function Button({
 
   return (
     <button
+      {...rest}
       type={type}
       className={classNames}
       disabled={isDisabled}
       onClick={onClick}
       aria-busy={loading || undefined}
-      {...rest}
     >
       {loading && (
         <span className={styles.spinnerWrap} aria-hidden="true">

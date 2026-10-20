@@ -5,7 +5,7 @@ import PasswordInput from '../components/ui/PasswordInput';
 import Button from '../components/ui/Button';
 import Checkbox from '../components/ui/Checkbox';
 import { MailIcon, LockIcon, CheckCircleIcon } from '../components/icons/Icons';
-import { Link, useNavigate } from '../router';
+import { Link } from '../router';
 import { useAuth } from '../auth/AuthContext';
 import { useMode } from '../mode/ModeContext';
 import authStyles from '../styles/auth.module.css';
@@ -38,7 +38,6 @@ function readRegisterSuccess() {
 export default function Login() {
   const { login } = useAuth();
   const { isWorker } = useMode();
-  const navigate = useNavigate();
   const [registered] = useState(readRegisterSuccess);
   const [email, setEmail] = useState(registered?.correo || '');
   const [password, setPassword] = useState('');
@@ -92,7 +91,7 @@ export default function Login() {
         password,
         rememberMe,
       });
-      navigate('/', { replace: true });
+      // AppRoutes redirige a la página pedida (oficiosya.next) o al panel.
     } catch (error) {
       setFormError(error.message || 'No se pudo iniciar sesión.');
     } finally {

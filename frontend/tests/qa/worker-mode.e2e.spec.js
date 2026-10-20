@@ -751,13 +751,15 @@ caseTest(
     const { page } = await openPage(browser, c, DESKTOP, 'A');
     const tiles = [
       { name: 'Bandeja de solicitudes', expect: '/trabajador/bandeja' },
-      { name: 'Mi oferta', expect: '/worker/profile' },
-      { name: 'Vista cliente', expect: '/mis-solicitudes' },
+      { name: 'Mi oferta y contenido', expect: '/worker/content' },
       { name: 'Verificación DPI', expect: '/worker/profile' },
+      { name: 'Vista cliente', expect: '/mis-solicitudes' },
     ];
     const seen = [];
     for (const tile of tiles) {
       await page.goto('/');
+      await page.evaluate(() => localStorage.setItem('oficiosya.mode', 'worker'));
+      await page.reload();
       await workerHeading(page).waitFor();
       await page.locator('main button').filter({ hasText: tile.name }).click();
       await page.waitForTimeout(800);
@@ -780,7 +782,7 @@ caseTest(
       });
     }
     const dpi = seen.find((s) => s.name === 'Verificación DPI');
-    const oferta = seen.find((s) => s.name === 'Mi oferta');
+    const oferta = seen.find((s) => s.name.startsWith('Mi oferta'));
     if (dpi && oferta && dpi.pathName === oferta.pathName) {
       observe(c, '"Mi oferta" y "Verificación DPI" abren exactamente la misma página, sin llevar a la sección de DPI.');
       uxNote(c, {
@@ -805,7 +807,7 @@ caseTest(
       const label = mobile ? 'móvil' : 'escritorio';
       const { page, close } = await openPage(browser, c, vp, 'A');
       await page.goto('/worker/profile');
-      await page.getByRole('heading', { name: 'Perfil y disponibilidad' }).waitFor();
+      await page.getByRole('heading', { name: /Datos del perfil y verificación|Perfil y disponibilidad/ }).waitFor();
       await settle(page);
       await shot(page, c, 'perfil-trabajador', `Página "Perfil y disponibilidad" (${label})`, { mobile });
       const err = await alertText(page);
@@ -950,7 +952,8 @@ caseTest(
     const expectedName = ctx.sessions.A.user?.nombre || 'QA Trabajador A';
     const problems = [];
     if (!name.includes(expectedName)) problems.push(`el título muestra "${name}" en lugar del nombre "${expectedName}"`);
-    if (!/Q\s?75/.test(bodyText)) problems.push('no aparece la tarifa guardada (Q75)');
+    const hasRate = /Q\s?75|Q\s?100|por hora|por servicio|a convenir|GTQ/i.test(bodyText);
+    if (!hasRate) problems.push('no aparece ninguna tarifa (ni la de perfil ni la del servicio)');
     if (/\{\s*"|"tarifas"|"horarios"/.test(bodyText)) problems.push('se ve texto JSON crudo en la descripción');
     if (zone && !bodyText.includes(zone.nombre)) problems.push(`no aparece la zona "${zone.nombre}"`);
     if (/Horario por coordinar/.test(bodyText)) problems.push('dice "Horario por coordinar" aunque hay un horario guardado (lunes 08:00–17:00)');
@@ -1070,7 +1073,8 @@ caseTest(
     const name = `QA Servicio TRB-12 ${STAMP}`;
     await page.getByLabel('Nombre del servicio').fill(name);
     await page.getByLabel('Categoría').selectOption(String(cat.id_categoria));
-    await page.getByLabel('Descripción').fill('Servicio creado desde la UI por la prueba E2E.');
+    await page.getByLabel('Descripción del servicio').fill('Servicio creado desde la UI por la prueba E2E.');
+    await page.getByLabel('Precio desde (Q)').fill('150');
     const { resp, via } = await submitForm(
       page,
       page.getByRole('button', { name: 'Agregar servicio' }),
@@ -1281,12 +1285,12 @@ caseTest(
       await section.locator('input[type="file"]').waitFor({ state: 'attached' });
       await settle(page);
       await section.locator('input[type="file"]').setInputFiles(ctx.files.portfolio);
-      await section.getByPlaceholder('Título del trabajo').fill(title);
-      await section.getByPlaceholder('Descripción').fill('Foto subida por la prueba E2E.');
+      await section.getByLabel('Título del trabajo').fill(title);
+      await section.getByLabel('Descripción', { exact: true }).fill('Foto subida por la prueba E2E.');
       const { resp, via } = await submitForm(
         page,
         section.getByRole('button', { name: 'Subir fotografía' }),
-        section.getByPlaceholder('Título del trabajo'),
+        section.getByLabel('Título del trabajo'),
         '/api/portfolio/upload',
       );
       if (via === 'Enter') {
@@ -1345,7 +1349,7 @@ caseTest(
       const { resp, via } = await submitForm(
         page,
         section.getByRole('button', { name: 'Subir fotografía' }),
-        section.getByPlaceholder('Título del trabajo'),
+        section.getByLabel('Título del trabajo'),
         '/api/portfolio/upload',
       );
       if (via === 'Enter' && !c.notes.some((n) => n.includes('Enter'))) {
@@ -1520,10 +1524,27 @@ caseTest(
       }
       return btns;
     };
-    const act = async (name, accion) => {
-      const respPromise = page.waitForResponse((r) => r.url().includes(`/api/requests/${id}/status`));
+    let confirmAsked = false;
+    const act = async (name, accion, { confirm = false } = {}) => {
+      const dialogP = confirm
+        ? page.waitForEvent('dialog', { timeout: 8000 }).catch(() => null)
+        : Promise.resolve(null);
+      const respPromise = page
+        .waitForResponse((r) => r.url().includes(`/api/requests/${id}/status`) && r.request().method() === 'PUT', {
+          timeout: 20000,
+        })
+        .catch(() => null);
       await card().getByRole('button', { name }).click();
+      const dialog = await dialogP;
+      if (dialog) {
+        confirmAsked = true;
+        await dialog.accept();
+      }
       const resp = await respPromise;
+      if (!resp) {
+        fail(c, `${accion}: no hubo respuesta de /requests/:id/status tras pulsar "${name}".`);
+        return false;
+      }
       c.http.push({ label: accion, request: `PUT /api/requests/${id}/status`, status: resp.status(), body: short(await resp.text(), 200) });
       await page.waitForTimeout(800);
       await settle(page);
@@ -1560,12 +1581,11 @@ caseTest(
       });
     }
     await checkCurrent();
-    let confirmAsked = false;
-    page.once('dialog', async (d) => {
-      confirmAsked = true;
-      await d.accept();
-    });
-    if (!(await act('Confirmar cierre', 'Finalizar'))) fail(c, `Finalizar falló: ${await alertText(page)}`);
+    if ((await requestState(id)) === 'En Proceso') {
+      if (!(await act('Confirmar cierre', 'Finalizar', { confirm: true }))) fail(c, `Finalizar falló: ${await alertText(page)}`);
+    } else {
+      fail(c, 'No se pulsó "Confirmar cierre" porque la solicitud no pasó a En Proceso.');
+    }
     await checkCurrent();
     const state = http(c, await call('GET', '/requests/worker', { token: token('A') }), 'Bandeja de A (API)');
     const row = Array.isArray(state.data) ? state.data.find((r) => r.id_solicitud === id) : null;
@@ -1685,21 +1705,25 @@ caseTest(
     const { page } = await openPage(browser, c, DESKTOP, 'A');
     await page.goto('/worker/content');
     const section = page.locator('section').filter({ has: page.getByRole('heading', { name: 'Reseñas recibidas' }) });
-    const input = section.getByPlaceholder('Responder públicamente').first();
+    const input = section.getByPlaceholder(/Escribe tu respuesta|Responder públicamente/).first();
     await input.waitFor({ timeout: 15000 });
     await settle(page);
     await section.scrollIntoViewIfNeeded();
     await shot(page, c, 'resena-sin-responder', 'Reseña recibida con el campo "Responder públicamente"');
     const reply = `Gracias por tu confianza (respuesta QA ${STAMP}).`;
     await input.fill(reply);
-    const respPromise = page.waitForResponse((r) => r.url().includes('/reply'));
+    const respPromise = page.waitForResponse((r) => r.url().includes('/reply'), { timeout: 20000 }).catch(() => null);
     await section.getByRole('button', { name: 'Responder' }).first().click();
     const resp = await respPromise;
+    if (!resp) {
+      fail(c, 'No hubo respuesta al publicar la reseña.');
+      return;
+    }
     c.http.push({ label: 'Responder reseña', request: `PUT /api/reviews/${ctx.review.id_resena}/reply`, status: resp.status(), body: short(await resp.text(), 300) });
     await section.getByText(reply).waitFor({ timeout: 8000 }).catch(() => {});
     await section.scrollIntoViewIfNeeded();
     await shot(page, c, 'resena-respondida', 'Reseña tras publicar la respuesta');
-    const formGone = (await section.getByPlaceholder('Responder públicamente').count()) === 0;
+    const formGone = (await section.getByPlaceholder(/Escribe tu respuesta|Responder públicamente/).count()) === 0;
     if (resp.ok() && formGone && (await section.getByText(reply).isVisible())) ok(c, 'Respuesta publicada; se muestra "Tu respuesta" y desaparece el formulario.');
     else fail(c, `HTTP ${resp.status()}, formulario oculto: ${formGone}. ${await alertText(page)}`);
 

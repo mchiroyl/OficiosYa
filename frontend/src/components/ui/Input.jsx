@@ -46,6 +46,7 @@ export default function Input({
           </span>
         )}
         <input
+          {...rest}
           ref={inputRef}
           id={id}
           type={type}
@@ -58,7 +59,6 @@ export default function Input({
           autoComplete={autoComplete}
           aria-invalid={error ? 'true' : undefined}
           aria-describedby={error ? `${id}-error` : undefined}
-          {...rest}
         />
         {rightElement && <div className={styles.iconRight}>{rightElement}</div>}
       </div>

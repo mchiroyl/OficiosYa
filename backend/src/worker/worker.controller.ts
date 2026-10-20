@@ -1,4 +1,4 @@
-import { Body, Controller, Get, Put, UseGuards } from '@nestjs/common';
+import { Body, Controller, Get, Param, ParseIntPipe, Put, UseGuards } from '@nestjs/common';
 import {
   ApiBearerAuth,
   ApiBody,
@@ -10,6 +10,7 @@ import {
 } from '@nestjs/swagger';
 import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
+import { Public } from '../auth/public.decorator';
 import { UsuarioRow } from '../common/usuario.util';
 import { HorarioDto } from './dto/horario.dto';
 import { TarifasDto } from './dto/tarifas.dto';
@@ -34,6 +35,18 @@ import { WorkerService } from './worker.service';
 @Controller('worker')
 export class WorkerController {
   constructor(private readonly workers: WorkerService) {}
+
+  @Public()
+  @Get('public/:id')
+  @ApiOperation({
+    summary: 'Perfil público de un trabajador',
+    description:
+      'Devuelve nombre, oficio, tarifas, horarios, cobertura y descripción legible. No requiere sesión.',
+  })
+  @ApiOkResponse({ type: WorkerProfileResponseDto })
+  getPublicProfile(@Param('id', ParseIntPipe) id: number) {
+    return this.workers.getPublicProfile(id);
+  }
 
   @Get('profile')
   @ApiOperation({

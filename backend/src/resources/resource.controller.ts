@@ -12,8 +12,10 @@ import {
   UseGuards,
 } from '@nestjs/common';
 import { ApiBearerAuth, ApiOperation, ApiTags } from '@nestjs/swagger';
+import { CurrentUser } from '../auth/current-user.decorator';
 import { JwtAuthGuard } from '../auth/jwt-auth.guard';
 import { OptionalJwtAuthGuard } from '../auth/optional-jwt-auth.guard';
+import { UsuarioRow } from '../common/usuario.util';
 import { ResourceService } from './resource.service';
 import { ResourceConfig } from './resources.config';
 
@@ -29,8 +31,8 @@ export function createResourceController(config: ResourceConfig): Type<unknown> 
     @Get()
     @UseGuards(readGuard)
     @ApiOperation({ summary: `Listar ${config.path}` })
-    findAll(@Query() query: Record<string, string>) {
-      return this.resources.findAll(config, query);
+    findAll(@Query() query: Record<string, string>, @CurrentUser() user?: UsuarioRow) {
+      return this.resources.findAll(config, query, user);
     }
 
     @Get(Array.isArray(config.pk) ? ':idPerfil/:idZona' : ':id')
@@ -43,15 +45,16 @@ export function createResourceController(config: ResourceConfig): Type<unknown> 
     @Post()
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: `Crear un registro en ${config.path}` })
-    create(@Body() body: Record<string, unknown>) {
+    create(@CurrentUser() user: UsuarioRow, @Body() body: Record<string, unknown>) {
       assertWritable(config);
-      return this.resources.create(config, body);
+      return this.resources.create(config, body, user);
     }
 
     @Patch(Array.isArray(config.pk) ? ':idPerfil/:idZona' : ':id')
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: `Actualizar un registro de ${config.path}` })
     update(
+      @CurrentUser() user: UsuarioRow,
       @Body() body: Record<string, unknown>,
       @Param('id') id?: string,
       @Param('idPerfil') idPerfil?: string,
@@ -62,6 +65,7 @@ export function createResourceController(config: ResourceConfig): Type<unknown> 
         config,
         keysFromParams(config, { id, idPerfil, idZona }),
         body,
+        user,
       );
     }
 
@@ -69,12 +73,13 @@ export function createResourceController(config: ResourceConfig): Type<unknown> 
     @UseGuards(JwtAuthGuard)
     @ApiOperation({ summary: `Eliminar un registro de ${config.path}` })
     remove(
+      @CurrentUser() user: UsuarioRow,
       @Param('id') id?: string,
       @Param('idPerfil') idPerfil?: string,
       @Param('idZona') idZona?: string,
     ) {
       assertWritable(config);
-      return this.resources.remove(config, keysFromParams(config, { id, idPerfil, idZona }));
+      return this.resources.remove(config, keysFromParams(config, { id, idPerfil, idZona }), user);
     }
   }
 
@@ -104,6 +109,14 @@ function assertWritable(config: ResourceConfig) {
     throw new ForbiddenException(
       'Los mensajes se envían por POST /api/chat/threads/:id/messages o el WebSocket /chat.',
     );
+  }
+  if (config.table === 'portafolio') {
+    throw new ForbiddenException(
+      'Las fotos se suben con POST /api/portfolio/upload y se eliminan con DELETE /api/portfolio/{id}.',
+    );
+  }
+  if (config.table === 'bitacora') {
+    throw new ForbiddenException('La bitácora es de solo lectura.');
   }
   throw new ForbiddenException('Este recurso no admite altas, cambios ni bajas por esta vía.');
 }

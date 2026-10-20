@@ -208,7 +208,8 @@ export class RequestsService {
         throw new ForbiddenException('No puedes cambiar el estado de esta solicitud.');
       }
       if (/INVALID_ACTION/i.test(error.message)) {
-        throw new BadRequestException('La acción debe ser Aceptar, Rechazar, Iniciar, Cancelar o Finalizar.');
+        // Si Supabase aún tiene la función antigua sin "Iniciar", usamos la máquina de estados de Nest.
+        return null;
       }
       if (/NOT_FOUND/i.test(error.message)) {
         throw new NotFoundException('La solicitud no existe.');

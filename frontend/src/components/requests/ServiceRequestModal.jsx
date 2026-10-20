@@ -129,7 +129,19 @@ export default function ServiceRequestModal({ worker, onClose }) {
         <p className={ui.hint}>Este registro aún no confirma una contratación ni una fecha de atención.</p>
         <button type="button" className={ui.primary} onClick={() => { const id = saved.id_solicitud; close(); navigate(`/chat/${id}`); }}>Abrir chat</button>
         <button type="button" className={ui.secondary} onClick={close}>Volver a los resultados</button>
-      </section> : <form onSubmit={submit} className={styles.form}>
+      </section> : <form
+        onSubmit={submit}
+        noValidate
+        className={styles.form}
+        onInvalid={(event) => {
+          event.preventDefault();
+          if (event.target?.name === 'descripcion') {
+            setError('Describe el trabajo con entre 10 y 4000 caracteres, sin contar espacios al inicio o al final.');
+          } else if (event.target?.name === 'id_servicio') {
+            setError('Selecciona un servicio activo de este trabajador.');
+          }
+        }}
+      >
         <p className={ui.hint}>Los campos con * son obligatorios.</p>
         {worker.disponibilidad === 'Ocupado' && <p className={ui.hint}>Este trabajador figura como ocupado; su disponibilidad debe confirmarse.</p>}
         {servicesError ? <div className={ui.error} role="alert">{servicesError} <button type="button" className={ui.textButton} onClick={() => setRetry((n) => n + 1)}>Reintentar servicios</button></div> : services === null ? <p role="status">Cargando servicios…</p> : !services.length ? <p role="status" className={ui.hint}>Este trabajador no tiene servicios activos para solicitar.</p> : null}

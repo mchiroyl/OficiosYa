@@ -2,6 +2,7 @@ import { ValidationPipe } from '@nestjs/common';
 import { NestFactory } from '@nestjs/core';
 import { IoAdapter } from '@nestjs/platform-socket.io';
 import { AppModule } from './app.module';
+import { PayloadTooLargeFilter } from './common/payload-too-large.filter';
 import { setupSwagger } from './swagger';
 
 async function bootstrap() {
@@ -20,6 +21,7 @@ async function bootstrap() {
       forbidNonWhitelisted: true,
     }),
   );
+  app.useGlobalFilters(new PayloadTooLargeFilter());
 
   setupSwagger(app);
 

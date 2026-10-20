@@ -43,6 +43,36 @@ export class WorkerService {
     return this.present(perfil);
   }
 
+  async getPublicProfile(idPerfil: number) {
+    const { data, error } = await this.supabase
+      .from('perfil_trabajador')
+      .select('*')
+      .eq('id_perfil', idPerfil)
+      .maybeSingle();
+    if (error) throw new BadRequestException(error.message);
+    if (!data) throw new NotFoundException('El perfil no está disponible.');
+
+    const perfil = data as PerfilRow;
+    const { data: owner, error: ownerError } = await this.supabase
+      .from('usuario')
+      .select('id_usuario, nombre, estado, modo_activo')
+      .eq('id_usuario', perfil.id_usuario)
+      .maybeSingle();
+    if (ownerError) throw new BadRequestException(ownerError.message);
+    const usuario = owner as {
+      id_usuario: number;
+      nombre: string;
+      estado: string;
+      modo_activo: boolean;
+    } | null;
+    if (!usuario || usuario.estado !== 'ACTIVO' || !usuario.modo_activo) {
+      throw new NotFoundException('El perfil no está disponible.');
+    }
+
+    const presented = await this.present(perfil);
+    return { ...presented, nombre: usuario.nombre };
+  }
+
   async updateProfile(usuario: UsuarioRow, dto: UpdateWorkerProfileDto) {
     const existing = await this.findPerfil(usuario.id_usuario);
     const extras = parseProfileExtras(existing?.descripcion);
