@@ -91,7 +91,7 @@ class OficiosYaWorld {
         { id_servicio: 1, id_perfil: 7, id_categoria: 3, nombre: 'Instalación eléctrica', descripcion: 'Instalaciones seguras', activo: true },
       ]);
       if (path === '/api/chat/conversations') return respond([
-        { id_solicitud: 121, estado: 'Enviada', contraparte: { nombre: 'Cliente de prueba' } },
+        { id_solicitud: 121, estado: 'Enviada', rol: 'trabajador', contraparte: { nombre: 'Cliente de prueba' } },
       ]);
       if (path === '/api/chat/threads/121/messages') return respond([{
         id_mensaje: 1,
@@ -102,6 +102,23 @@ class OficiosYaWorld {
         fecha_envio: '2026-10-15T12:00:00.000Z',
         contenido: '9'.repeat(800),
       }]);
+      if (path === '/api/chat/threads/121/quotations' && route.request().method() === 'POST') {
+        this.quotationUpload = {
+          contentType: route.request().headers()['content-type'],
+          body: route.request().postDataBuffer()?.toString('latin1') || '',
+        };
+        return respond({
+          id_mensaje: 2,
+          id_solicitud: 121,
+          id_emisor: 10,
+          mio: true,
+          emisor_nombre: user.nombre,
+          fecha_envio: '2026-11-05T12:00:00.000Z',
+          contenido: 'Cotización en PDF',
+          adjunto_url: 'https://storage.example/cotizaciones/cotizacion.pdf?token=demo',
+          tipo: 'pdf',
+        }, 201);
+      }
       if (path === '/api/portfolio') return respond([]);
       if (path === '/api/requests/worker') return respond([]);
       return respond([]);
@@ -190,6 +207,22 @@ When('abro el chat con un mensaje continuo extenso', async function () {
   this.longMessage = '9'.repeat(800);
   await this.page.goto('/chat/121');
   await expect(this.page.getByText(this.longMessage, { exact: true })).toBeVisible();
+});
+
+When('genero y envío una cotización desde el chat', async function () {
+  await this.page.goto('/chat/121');
+  await this.page.getByRole('button', { name: 'Generar cotización PDF' }).click();
+  await this.page.getByLabel('Descripción del servicio').fill('Reparación de instalación eléctrica');
+  await this.page.getByLabel('Precio total (Q)').fill('125.50');
+  await this.page.getByRole('button', { name: 'Enviar PDF al chat' }).click();
+});
+
+Then('el cliente debe recibir un enlace para abrir el PDF de cotización', async function () {
+  await expect(this.page.getByRole('link', { name: 'Ver o descargar cotización' })).toBeVisible();
+  expect(this.quotationUpload?.contentType).toContain('multipart/form-data');
+  expect(this.quotationUpload?.body).toContain('cotizacion-solicitud-121.pdf');
+  expect(this.quotationUpload?.body).toContain('application/pdf');
+  expect(this.quotationUpload?.body).toContain('%PDF-1.4');
 });
 
 When('intento enviar un DPI con una imagen mayor de 8 MB', async function () {

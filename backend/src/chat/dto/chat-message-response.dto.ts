@@ -22,8 +22,8 @@ export class ChatMessageResponseDto {
   @ApiPropertyOptional({ nullable: true })
   adjunto_thumb_url: string | null;
 
-  @ApiProperty({ enum: ['texto', 'imagen'], example: 'texto' })
-  tipo: 'texto' | 'imagen';
+  @ApiProperty({ enum: ['texto', 'imagen', 'pdf'], example: 'texto' })
+  tipo: 'texto' | 'imagen' | 'pdf';
 
   @ApiProperty()
   fecha_envio: string;

@@ -6,7 +6,7 @@ export type ChatMessage = {
   contenido: string;
   adjunto_url: string | null;
   adjunto_thumb_url: string | null;
-  tipo: 'texto' | 'imagen';
+  tipo: 'texto' | 'imagen' | 'pdf';
   fecha_envio: string;
   mio?: boolean;
 };

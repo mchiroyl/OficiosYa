@@ -83,6 +83,30 @@ export class ChatController {
     return this.chat.sendText(user, idSolicitud, dto.contenido);
   }
 
+  @Post('threads/:idSolicitud/quotations')
+  @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 4 * 1024 * 1024 } }))
+  @ApiConsumes('multipart/form-data')
+  @ApiOperation({
+    summary: 'Enviar una cotización PDF al chat como trabajador',
+    description: 'Guarda el documento en almacenamiento privado y comparte un enlace temporal en el chat.',
+  })
+  @ApiBody({
+    schema: {
+      type: 'object',
+      required: ['file'],
+      properties: { file: { type: 'string', format: 'binary', description: 'PDF de hasta 4 MB.' } },
+    },
+  })
+  @ApiOkResponse({ type: ChatMessageResponseDto })
+  sendQuotation(
+    @CurrentUser() user: UsuarioRow,
+    @Param('idSolicitud', ParseIntPipe) idSolicitud: number,
+    @UploadedFile()
+    file: { buffer: Buffer; mimetype?: string; originalname?: string },
+  ) {
+    return this.chat.sendQuotation(user, idSolicitud, file);
+  }
+
   @Post('threads/:idSolicitud/images')
   @UseInterceptors(FileInterceptor('file', { limits: { fileSize: 8 * 1024 * 1024 } }))
   @ApiConsumes('multipart/form-data')

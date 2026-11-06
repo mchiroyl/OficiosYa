@@ -41,6 +41,17 @@ export class StorageService {
     return path;
   }
 
+  async uploadQuotation(path: string, buffer: Buffer) {
+    const bucket = 'cotizaciones';
+    await this.ensureQuotationBucket(bucket);
+    const { error } = await this.supabase.admin.storage.from(bucket).upload(path, buffer, {
+      contentType: 'application/pdf',
+      upsert: true,
+    });
+    if (error) throw new BadRequestException(error.message || 'No se pudo subir la cotización.');
+    return `cotizaciones:${path}`;
+  }
+
   async signedUrl(bucket: string, path: string | null | undefined, expiresIn = 600) {
     if (!path) return null;
     const { data, error } = await this.supabase.admin.storage
@@ -86,6 +97,32 @@ export class StorageService {
   }
 
   private readonly privateReady = new Set<string>();
+
+  private async ensureQuotationBucket(bucket: string) {
+    if (this.privateReady.has(bucket)) return;
+
+    const config = {
+      public: false,
+      fileSizeLimit: '5MB',
+      allowedMimeTypes: ['application/pdf'],
+    };
+    const { data, error } = await this.supabase.admin.storage.getBucket(bucket);
+    if (data && !error) {
+      const { error: updateError } = await this.supabase.admin.storage.updateBucket(bucket, config);
+      if (updateError) {
+        throw new BadRequestException('No se pudo configurar el almacenamiento de cotizaciones.');
+      }
+      this.privateReady.add(bucket);
+      return;
+    }
+
+    const { error: createError } = await this.supabase.admin.storage.createBucket(bucket, config);
+    if (createError && !/already exists|duplicate/i.test(createError.message)) {
+      this.logger.error(`No se pudo crear el bucket ${bucket}: ${createError.message}`);
+      throw new BadRequestException('El almacenamiento de cotizaciones no está disponible.');
+    }
+    this.privateReady.add(bucket);
+  }
 
   private async ensurePrivateBucket(bucket: string) {
     if (this.privateReady.has(bucket)) return;

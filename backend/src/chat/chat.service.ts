@@ -36,6 +36,8 @@ type MensajeRow = {
   fecha_envio: string;
 };
 
+const QUOTATION_ATTACHMENT_PREFIX = 'cotizaciones:';
+
 type UploadFile = {
   buffer: Buffer;
   mimetype?: string;
@@ -71,7 +73,10 @@ export class ChatService {
     const lastByThread = new Map<number, ChatMessage>();
     for (const mensaje of mensajes) {
       if (!lastByThread.has(mensaje.id_solicitud)) {
-        lastByThread.set(mensaje.id_solicitud, this.present(mensaje, usuario.id_usuario, usuarios));
+        lastByThread.set(
+          mensaje.id_solicitud,
+          await this.present(mensaje, usuario.id_usuario, usuarios),
+        );
       }
     }
 
@@ -106,7 +111,7 @@ export class ChatService {
     const limit = query.limit || 50;
     const rows = await this.fetchMessages(idSolicitud, query.after || 0, limit);
     const usuarios = await this.loadUsuarios(rows.map((row) => row.id_emisor));
-    return rows.map((row) => this.present(row, usuario.id_usuario, usuarios));
+    return Promise.all(rows.map((row) => this.present(row, usuario.id_usuario, usuarios)));
   }
 
   async pollMessages(usuario: UsuarioRow, idSolicitud: number, query: PollMessagesDto) {
@@ -168,6 +173,33 @@ export class ChatService {
     return this.publish(saved, usuario);
   }
 
+  async sendQuotation(
+    usuario: UsuarioRow,
+    idSolicitud: number,
+    file: UploadFile | undefined,
+  ) {
+    const { rol } = await this.requireParticipant(usuario, idSolicitud);
+    if (rol !== 'trabajador') {
+      throw new ForbiddenException('Solo el trabajador puede enviar una cotización.');
+    }
+    if (!file?.buffer?.length) {
+      throw new BadRequestException('Debes adjuntar el PDF de la cotización.');
+    }
+    if (file.mimetype !== 'application/pdf' || file.buffer.subarray(0, 5).toString() !== '%PDF-') {
+      throw new BadRequestException('El archivo debe ser un PDF válido.');
+    }
+
+    const stem = `chat/${idSolicitud}/${usuario.id_usuario}/cotizacion-${Date.now()}-${randomBytes(4).toString('hex')}.pdf`;
+    const attachment = await this.storage.uploadQuotation(stem, file.buffer);
+    const saved = await this.insertMensaje({
+      id_solicitud: idSolicitud,
+      id_emisor: usuario.id_usuario,
+      contenido: 'Cotización en PDF',
+      adjunto_url: attachment,
+    });
+    return this.publish(saved, usuario);
+  }
+
   async requireParticipant(usuario: UsuarioRow, idSolicitud: number) {
     const solicitud = await this.findSolicitud(idSolicitud);
     if (!solicitud) {
@@ -188,18 +220,25 @@ export class ChatService {
 
   private async publish(row: MensajeRow, autor: UsuarioRow) {
     const usuarios = new Map<number, UsuarioRow>([[autor.id_usuario, autor]]);
-    const message = this.present(row, autor.id_usuario, usuarios);
+    const message = await this.present(row, autor.id_usuario, usuarios);
     this.hub.publish(row.id_solicitud, { ...message, mio: false });
     await this.registrarBitacora(autor.id_usuario, 'SEND_CHAT_MESSAGE', 'mensaje');
     return message;
   }
 
-  private present(
+  private async present(
     row: MensajeRow,
     viewerId: number,
     usuarios: Map<number, UsuarioRow>,
-  ): ChatMessage {
-    const adjunto = row.adjunto_url || null;
+  ): Promise<ChatMessage> {
+    const storedAttachment = row.adjunto_url || null;
+    const pdfPath = storedAttachment?.startsWith(QUOTATION_ATTACHMENT_PREFIX)
+      ? storedAttachment.slice(QUOTATION_ATTACHMENT_PREFIX.length)
+      : null;
+    const isPdf = pdfPath !== null;
+    const adjunto = pdfPath
+      ? await this.storage.signedUrl('cotizaciones', pdfPath, 86400)
+      : storedAttachment;
     return {
       id_mensaje: row.id_mensaje,
       id_solicitud: row.id_solicitud,
@@ -207,8 +246,8 @@ export class ChatService {
       emisor_nombre: usuarios.get(row.id_emisor)?.nombre || 'Usuario',
       contenido: row.contenido,
       adjunto_url: adjunto,
-      adjunto_thumb_url: this.storage.thumbUrlFromFull(adjunto),
-      tipo: adjunto ? 'imagen' : 'texto',
+      adjunto_thumb_url: isPdf ? null : this.storage.thumbUrlFromFull(adjunto),
+      tipo: isPdf ? 'pdf' : adjunto ? 'imagen' : 'texto',
       fecha_envio: row.fecha_envio,
       mio: row.id_emisor === viewerId,
     };

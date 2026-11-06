@@ -26,6 +26,11 @@ Característica: Correcciones reportadas por QA
     Cuando abro el chat con un mensaje continuo extenso
     Entonces el mensaje debe ajustarse al ancho disponible
 
+  Escenario: Enviar una cotización PDF desde el chat del trabajador
+    Dado que soy un trabajador autenticado
+    Cuando genero y envío una cotización desde el chat
+    Entonces el cliente debe recibir un enlace para abrir el PDF de cotización
+
   Escenario: Explicar en español el límite de carga del DPI
     Dado que soy un trabajador autenticado
     Cuando intento enviar un DPI con una imagen mayor de 8 MB

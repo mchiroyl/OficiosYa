@@ -35,6 +35,12 @@ export function sendChatImage(idSolicitud, file, token, contenido) {
   return apiMultipart(`/chat/threads/${idSolicitud}/images`, { body, token });
 }
 
+export function sendChatQuotation(idSolicitud, file, token) {
+  const body = new FormData();
+  body.append('file', file);
+  return apiMultipart(`/chat/threads/${idSolicitud}/quotations`, { body, token });
+}
+
 export function chatSocketOrigin() {
   const apiUrl = import.meta.env.VITE_API_URL || '/api';
   if (apiUrl.startsWith('http')) {

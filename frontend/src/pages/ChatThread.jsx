@@ -10,8 +10,10 @@ import {
   listConversations,
   pollChatMessages,
   sendChatImage,
+  sendChatQuotation,
   sendChatText,
 } from '../api/chat';
+import { createQuotationPdfBlob } from '../lib/quotationPdf';
 import { useParams } from '../router';
 import styles from './Chat.module.css';
 
@@ -45,6 +47,9 @@ export default function ChatThread() {
   const [messages, setMessages] = useState([]);
   const [texto, setTexto] = useState('');
   const [file, setFile] = useState(null);
+  const [quoteOpen, setQuoteOpen] = useState(false);
+  const [quoteDescription, setQuoteDescription] = useState('');
+  const [quotePrice, setQuotePrice] = useState('');
   const [transport, setTransport] = useState('conectando');
   const [loading, setLoading] = useState(true);
   const [sending, setSending] = useState(false);
@@ -203,6 +208,43 @@ export default function ChatThread() {
 
   const composerLocked = sending || accessDenied;
 
+  const handleSendQuotation = async (event) => {
+    event.preventDefault();
+    if (!token || sending || conversation?.rol !== 'trabajador') return;
+    const description = quoteDescription.trim();
+    const price = Number(quotePrice);
+    if (!description || !Number.isFinite(price) || price <= 0) {
+      setError('Escribe la descripción del servicio y un precio mayor que cero.');
+      return;
+    }
+
+    setSending(true);
+    setError('');
+    try {
+      const date = new Intl.DateTimeFormat('es-GT', { dateStyle: 'long' }).format(new Date());
+      const pdf = createQuotationPdfBlob({
+        workerName: user?.nombre || 'Trabajador',
+        date,
+        description,
+        price,
+        requestId: idSolicitud,
+      });
+      const quotation = new File([pdf], `cotizacion-solicitud-${idSolicitud}.pdf`, {
+        type: 'application/pdf',
+      });
+      const saved = await sendChatQuotation(idSolicitud, quotation, token);
+      setMessages((current) => mergeMessages(current, [saved]));
+      afterRef.current = Math.max(afterRef.current, saved.id_mensaje || 0);
+      setQuoteDescription('');
+      setQuotePrice('');
+      setQuoteOpen(false);
+    } catch (err) {
+      setError(err.message || 'No se pudo enviar la cotización.');
+    } finally {
+      setSending(false);
+    }
+  };
+
   return (
     <>
       <AppHeader />
@@ -241,7 +283,17 @@ export default function ChatThread() {
                       <p className={styles.bubbleMeta}>
                         {mine ? 'Tú' : message.emisor_nombre} · {formatTime(message.fecha_envio)}
                       </p>
-                      {message.adjunto_url ? (
+                      {message.tipo === 'pdf' && message.adjunto_url ? (
+                        <a
+                          className={styles.documentLink}
+                          href={message.adjunto_url}
+                          target="_blank"
+                          rel="noreferrer"
+                        >
+                          <span className={styles.pdfBadge}>PDF</span>
+                          <span>Ver o descargar cotización</span>
+                        </a>
+                      ) : message.adjunto_url ? (
                         <a href={message.adjunto_url} target="_blank" rel="noreferrer">
                           <img
                             src={message.adjunto_thumb_url || message.adjunto_url}
@@ -297,8 +349,60 @@ export default function ChatThread() {
           </form>
           )}
           {file ? <p className={styles.fileName}>Imagen lista: {file.name}</p> : null}
+          {conversation?.rol === 'trabajador' ? (
+            <Button
+              type="button"
+              variant="secondary"
+              className={styles.quoteButton}
+              disabled={sending}
+              onClick={() => { setError(''); setQuoteOpen(true); }}
+            >
+              Generar cotización PDF
+            </Button>
+          ) : null}
         </div>
       </div>
+      {quoteOpen ? (
+        <div className={styles.modalBackdrop}>
+          <section className={styles.quoteModal} role="dialog" aria-modal="true" aria-labelledby="quote-title">
+            <h2 id="quote-title">Nueva cotización</h2>
+            <p>Se generará un PDF con tu nombre, la fecha, la descripción y el precio.</p>
+            <form onSubmit={handleSendQuotation}>
+              <label>
+                Descripción del servicio
+                <textarea
+                  rows="5"
+                  maxLength={900}
+                  value={quoteDescription}
+                  onChange={(event) => setQuoteDescription(event.target.value)}
+                  placeholder="Describe el trabajo que realizarás"
+                  required
+                />
+              </label>
+              <label>
+                Precio total (Q)
+                <input
+                  type="number"
+                  min="0.01"
+                  step="0.01"
+                  value={quotePrice}
+                  onChange={(event) => setQuotePrice(event.target.value)}
+                  placeholder="0.00"
+                  required
+                />
+              </label>
+              <div className={styles.quoteActions}>
+                <Button type="button" variant="secondary" disabled={sending} onClick={() => setQuoteOpen(false)}>
+                  Cancelar
+                </Button>
+                <Button type="submit" loading={sending} disabled={sending || !quoteDescription.trim() || !quotePrice}>
+                  Enviar PDF al chat
+                </Button>
+              </div>
+            </form>
+          </section>
+        </div>
+      ) : null}
     </div>
     </>
   );
