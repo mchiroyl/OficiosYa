@@ -1,0 +1,15 @@
+{
+  "name": "oficiosya-qa-reports",
+  "private": true,
+  "version": "1.0.0",
+  "type": "module",
+  "scripts": {
+    "setup:accounts": "node scripts/setup-worker-accounts.mjs",
+    "setup:client": "node scripts/setup-client-accounts.mjs",
+    "report:worker": "node scripts/build-worker-report.mjs",
+    "report:client": "node scripts/build-client-report.mjs"
+  },
+  "dependencies": {
+    "docx": "^9.11.0"
+  }
+}
