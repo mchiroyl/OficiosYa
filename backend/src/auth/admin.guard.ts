@@ -2,6 +2,7 @@ import { CanActivate, ExecutionContext, ForbiddenException, Injectable } from '@
 import { ConfigService } from '@nestjs/config';
 import { UsuarioRow } from '../common/usuario.util';
 import { correoEsAdmin } from './admin-emails';
+import { normalizeRol, ROL_ADMINISTRADOR } from './roles';
 
 @Injectable()
 export class AdminGuard implements CanActivate {
@@ -10,8 +11,10 @@ export class AdminGuard implements CanActivate {
   canActivate(context: ExecutionContext) {
     const request = context.switchToHttp().getRequest<{ user?: UsuarioRow }>();
     const user = request.user;
-    if (!user || !correoEsAdmin(user.correo, this.config.get<string>('ADMIN_EMAILS'))) {
-      throw new ForbiddenException('Solo el equipo de moderación puede acceder.');
+    const porRol = normalizeRol(user?.rol) === ROL_ADMINISTRADOR;
+    const porCorreo = correoEsAdmin(user?.correo, this.config.get<string>('ADMIN_EMAILS'));
+    if (!user || (!porRol && !porCorreo)) {
+      throw new ForbiddenException('Solo el administrador puede acceder.');
     }
     return true;
   }

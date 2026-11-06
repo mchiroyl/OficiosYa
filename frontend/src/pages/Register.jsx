@@ -204,12 +204,15 @@ export default function Register({ mode = 'client' }) {
         'oficiosya.registerSuccess',
         JSON.stringify({
           correo: email.trim(),
-          message: 'Cuenta creada exitosamente.',
-          goToProfile: isWorker,
+          message: data?.needsApproval
+            ? 'Cuenta creada. Un administrador debe aprobarla antes de iniciar sesión.'
+            : 'Cuenta creada exitosamente.',
+          pending: Boolean(data?.needsApproval),
+          goToProfile: isWorker && !data?.needsApproval,
         }),
       );
 
-      if (data.tokens?.accessToken) {
+      if (data.tokens?.accessToken && !data?.needsApproval) {
         navigate(isWorker ? '/worker/profile' : '/', { replace: true });
       } else {
         navigate('/login', { replace: true });

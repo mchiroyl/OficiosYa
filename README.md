@@ -31,6 +31,10 @@ Configura la base siguiendo [las instrucciones del backend](backend/README.md). 
 
 La segunda migración habilita la acción **Iniciar trabajo** y el estado **En Proceso**. No se ejecuta automáticamente al arrancar.
 
+Para habilitar la administración, aplica `backend/src/auth/sql/003_rol_admin_sugerencias.sql` y configura `ADMIN_EMAILS` en `backend/.env` con los correos autorizados, separados por comas. En desarrollo local puedes usar `NODE_ENV=development` y `ADMIN_ALLOW_TEST_REGISTRATION=true` para registrar una cuenta administrativa nueva con cualquier correo válido, incluso uno ficticio. Esta opción solo funciona cuando ambas variables están configuradas. El administrador se registra en `/admin/register` e inicia sesión en `/admin/login`; los clientes y trabajadores usan `/register` y `/login`. La navegación administrativa está bajo `/admin`, y sus acciones sensibles usan `/api/admin/*` con verificación de rol en el servidor.
+
+El alta administrativa actual depende de la lista `ADMIN_EMAILS`; antes de exponer el registro en producción, integra la verificación de propiedad del correo o provisiona las cuentas desde un canal interno.
+
 ## Desarrollo
 
 Abre dos terminales en la raíz:

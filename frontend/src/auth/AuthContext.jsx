@@ -1,5 +1,6 @@
 import { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react';
 import { api } from '../api/client';
+import { isAdminUser } from '../lib/admin';
 import { clearSession, readSession, sessionUsesRemember, writeSession } from './storage';
 
 const AuthContext = createContext(null);
@@ -26,7 +27,7 @@ export function AuthProvider({ children }) {
       expiresAt: data.tokens.expiresAt,
       tienePerfilTrabajador: data.tienePerfilTrabajador,
       perfilTrabajador: data.perfilTrabajador,
-      es_admin: Boolean(data.es_admin),
+      es_admin: Boolean(data.es_admin) || isAdminUser(data.user),
     };
     persist(next, rememberMe);
     return next;
@@ -67,7 +68,7 @@ export function AuthProvider({ children }) {
             user: me.user,
             tienePerfilTrabajador: me.tienePerfilTrabajador,
             perfilTrabajador: me.perfilTrabajador,
-            es_admin: Boolean(me.es_admin),
+            es_admin: Boolean(me.es_admin) || isAdminUser(me.user),
           },
           stored.rememberMe ?? sessionUsesRemember(),
         );
@@ -99,12 +100,25 @@ export function AuthProvider({ children }) {
     [applyAuthResponse],
   );
 
+  const loginAdmin = useCallback(async ({ correo, password, rememberMe }) => {
+    const data = await api('/admin/auth/login', {
+      method: 'POST', body: { correo, password, rememberMe: Boolean(rememberMe) },
+    });
+    return applyAuthResponse(data, Boolean(rememberMe));
+  }, [applyAuthResponse]);
+
+  const registerAdmin = useCallback(async (payload) => {
+    const data = await api('/admin/auth/register', { method: 'POST', body: payload });
+    if (data?.tokens?.accessToken) applyAuthResponse(data, false);
+    return data;
+  }, [applyAuthResponse]);
+
   const register = useCallback(async (payload) => {
     const data = await api('/auth/register', {
       method: 'POST',
       body: payload,
     });
-    if (data?.tokens?.accessToken) {
+    if (data?.tokens?.accessToken && !data?.needsApproval) {
       applyAuthResponse(data, false);
     }
     return data;
@@ -143,14 +157,16 @@ export function AuthProvider({ children }) {
       session,
       user: session?.user || null,
       isAuthenticated: Boolean(session?.accessToken),
-      isAdmin: Boolean(session?.es_admin),
+      isAdmin: Boolean(session?.es_admin) || isAdminUser(session?.user),
       login,
+      loginAdmin,
       register,
+      registerAdmin,
       logout,
       forgotPassword,
       resetPassword,
     }),
-    [forgotPassword, login, logout, ready, register, resetPassword, session],
+    [forgotPassword, login, loginAdmin, logout, ready, register, registerAdmin, resetPassword, session],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;

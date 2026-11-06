@@ -3,6 +3,8 @@ import { readSession, sessionUsesRemember, writeSession } from '../auth/storage'
 const API_URL = import.meta.env.VITE_API_URL || '/api';
 const NO_REFRESH = new Set([
   '/auth/login',
+  '/admin/auth/login',
+  '/admin/auth/register',
   '/auth/register',
   '/auth/refresh-token',
   '/auth/forgot-password',

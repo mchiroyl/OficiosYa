@@ -1,15 +1,15 @@
 import { useEffect, useState } from 'react';
+import AdminHeader from '../components/AdminHeader';
 import BackLink from '../components/BackLink';
-import Button from '../components/ui/Button';
 import { useAuth } from '../auth/AuthContext';
 import { getAdminDpi, listPendingDpi, reviewDpi } from '../api/identity';
 import { listAdminReports, updateAdminReport } from '../api/reports';
 import styles from './AdminReports.module.css';
 
-export default function AdminReports() {
+export default function AdminReports({ initialTab = 'reportes' }) {
   const { session, isAdmin } = useAuth();
   const token = session?.accessToken;
-  const [tab, setTab] = useState('reportes');
+  const [tab, setTab] = useState(initialTab);
   const [reports, setReports] = useState([]);
   const [pendingDpi, setPendingDpi] = useState([]);
   const [selectedDpi, setSelectedDpi] = useState(null);
@@ -23,12 +23,15 @@ export default function AdminReports() {
     setLoading(true);
     setError('');
     try {
-      const [reportData, dpiData] = await Promise.all([
+      const [reportResult, dpiResult] = await Promise.allSettled([
         listAdminReports(token, { estado }),
         listPendingDpi(token),
       ]);
-      setReports(Array.isArray(reportData) ? reportData : []);
-      setPendingDpi(Array.isArray(dpiData) ? dpiData : []);
+      if (reportResult.status === 'fulfilled') setReports(Array.isArray(reportResult.value) ? reportResult.value : []);
+      if (dpiResult.status === 'fulfilled') setPendingDpi(Array.isArray(dpiResult.value) ? dpiResult.value : []);
+      if (reportResult.status === 'rejected' || dpiResult.status === 'rejected') {
+        setError('No se pudieron cargar todos los datos de moderación. Revisa la conexión y vuelve a intentar.');
+      }
     } catch (err) {
       setError(err.message || 'No se pudo cargar la moderación.');
     } finally {
@@ -85,7 +88,7 @@ export default function AdminReports() {
     return (
       <div className={styles.page}>
         <div className={styles.inner}>
-          <BackLink to="/">Volver al inicio</BackLink>
+          <BackLink to="/admin">Volver al panel</BackLink>
           <p className={styles.error} role="alert">
             Esta sección es solo para el equipo de moderación.
           </p>
@@ -96,11 +99,12 @@ export default function AdminReports() {
 
   return (
     <div className={styles.page}>
+      <AdminHeader />
       <div className={styles.inner}>
-        <BackLink to="/">Volver al inicio</BackLink>
+        <BackLink to="/admin">Volver al panel</BackLink>
         <header className={styles.header}>
           <h1 className={styles.title}>Moderación</h1>
-          <p className={styles.subtitle}>Denuncias (HU-21) y documentos de identidad (HU-20).</p>
+          <p className={styles.subtitle}>Revisa denuncias y documentos de identidad desde una misma bandeja.</p>
         </header>
 
         <div className={styles.tabs}>
@@ -129,7 +133,7 @@ export default function AdminReports() {
             {loading ? (
               <p className={styles.status}>Cargando denuncias…</p>
             ) : reports.length === 0 ? (
-              <p className={styles.empty}>No hay denuncias con ese filtro.</p>
+              <div className={styles.empty}><strong>Sin denuncias en esta vista.</strong><span>Los reportes nuevos aparecerán aquí cuando un usuario los envíe.</span></div>
             ) : (
               <ul className={styles.list}>
                 {reports.map((item) => (
@@ -146,15 +150,15 @@ export default function AdminReports() {
                     </p>
                     {item.estado === 'PENDIENTE' ? (
                       <div className={styles.actions}>
-                        <Button type="button" onClick={() => resolveReport(item.id_reporte, 'RESUELTO')}>
+                        <button className={styles.primary} type="button" onClick={() => resolveReport(item.id_reporte, 'RESUELTO')}>
                           Resolver
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => resolveReport(item.id_reporte, 'RESUELTO', 'SUSPENDIDO')}>
+                        </button>
+                        <button className={styles.secondary} type="button" onClick={() => resolveReport(item.id_reporte, 'RESUELTO', 'SUSPENDIDO')}>
                           Resolver y suspender
-                        </Button>
-                        <Button type="button" variant="outline" onClick={() => resolveReport(item.id_reporte, 'RECHAZADO')}>
+                        </button>
+                        <button className={styles.secondary} type="button" onClick={() => resolveReport(item.id_reporte, 'RECHAZADO')}>
                           Rechazar
-                        </Button>
+                        </button>
                       </div>
                     ) : null}
                   </li>
@@ -167,7 +171,7 @@ export default function AdminReports() {
             {loading ? (
               <p className={styles.status}>Cargando verificaciones…</p>
             ) : pendingDpi.length === 0 ? (
-              <p className={styles.empty}>No hay DPI pendientes.</p>
+              <div className={styles.empty}><strong>Sin DPI pendientes.</strong><span>Los documentos enviados por trabajadores aparecerán aquí para revisión.</span></div>
             ) : (
               <ul className={styles.list}>
                 {pendingDpi.map((item) => (
@@ -176,9 +180,9 @@ export default function AdminReports() {
                     <p className={styles.meta}>
                       Usuario #{item.id_usuario} · {item.oficio_principal} · {item.dpi?.numero_enmascarado || 'sin número'}
                     </p>
-                    <Button type="button" variant="outline" onClick={() => openDpi(item.id_usuario)}>
+                    <button className={styles.secondary} type="button" onClick={() => openDpi(item.id_usuario)}>
                       Revisar documentos
-                    </Button>
+                    </button>
                   </li>
                 ))}
               </ul>
@@ -203,12 +207,12 @@ export default function AdminReports() {
                   ) : null}
                 </div>
                 <div className={styles.actions}>
-                  <Button type="button" onClick={() => decideDpi('aprobar')}>
+                  <button className={styles.primary} type="button" onClick={() => decideDpi('aprobar')}>
                     Aprobar y verificar
-                  </Button>
-                  <Button type="button" variant="outline" onClick={() => decideDpi('rechazar')}>
+                  </button>
+                  <button className={styles.secondary} type="button" onClick={() => decideDpi('rechazar')}>
                     Rechazar
-                  </Button>
+                  </button>
                 </div>
               </div>
             ) : null}

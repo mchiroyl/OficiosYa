@@ -7,6 +7,7 @@ import { getWorkerProfile, listZonas, updateWorkerAvailability, updateWorkerProf
 import { deletePortfolioPhoto, listPortfolio, uploadPortfolioPhoto } from '../api/portfolio';
 import { createService, deleteService, listCategories, listMyServices, updateService } from '../api/offerings';
 import { listReviews, replyToReview } from '../api/reviews';
+import { listMyOficioSuggestions, suggestOficio } from '../api/admin';
 import { formatServiceRate, formatServiceSchedule, parseServiceContent, serializeServiceContent } from '../lib/serviceContent';
 import styles from './WorkerContent.module.css';
 
@@ -73,16 +74,20 @@ export default function WorkerContent() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [success, setSuccess] = useState('');
+  const [suggestionName, setSuggestionName] = useState('');
+  const [suggestionNote, setSuggestionNote] = useState('');
+  const [suggestions, setSuggestions] = useState([]);
 
   const load = useCallback(async () => {
     if (!token) return;
     setError('');
     try {
-      const [current, categoryRows, zoneRows, photoRows] = await Promise.all([
+      const [current, categoryRows, zoneRows, photoRows, suggestionRows] = await Promise.all([
         getWorkerProfile(token),
         listCategories(),
         listZonas(),
         listPortfolio(token),
+        listMyOficioSuggestions(token).catch(() => []),
       ]);
       const [serviceRows, reviewRows] = current.id_perfil
         ? await Promise.all([
@@ -98,6 +103,7 @@ export default function WorkerContent() {
       setPhotos(asList(photoRows));
       setReviews(asList(reviewRows));
       setServices(serviceRows);
+      setSuggestions(asList(suggestionRows));
     } catch (err) {
       setError(err.message || 'No se pudo cargar tu oferta y contenido.');
     } finally {
@@ -212,6 +218,19 @@ export default function WorkerContent() {
   const confirmDelete = (message, action) => {
     if (!window.confirm(message)) return;
     action();
+  };
+
+  const sendSuggestion = (event) => {
+    event.preventDefault();
+    if (!suggestionName.trim()) {
+      setError('Escribe el nombre del oficio que quieres sugerir.');
+      return;
+    }
+    run('suggestion', async () => {
+      await suggestOficio({ nombre: suggestionName.trim(), descripcion: suggestionNote.trim() || undefined }, token);
+      setSuggestionName('');
+      setSuggestionNote('');
+    }, 'Sugerencia enviada. El administrador la revisará.');
   };
 
   return (

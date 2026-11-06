@@ -26,7 +26,7 @@ export const RESOURCES: ResourceConfig[] = [
     table: 'usuario',
     pk: 'id_usuario',
     hiddenFields: ['password_hash'],
-    protectedFields: ['password_hash', 'estado', 'modo_activo'],
+    protectedFields: ['password_hash', 'estado', 'modo_activo', 'rol'],
     denyCreate: true,
     owner: { field: 'id_usuario', via: 'user' },
   },

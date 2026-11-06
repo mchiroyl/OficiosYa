@@ -37,6 +37,47 @@ export function updateUserEstado(id, estado, token) {
   });
 }
 
+export function approveUser(id, token, motivo) {
+  return api(`/admin/usuarios/${id}/aprobar`, {
+    method: 'PATCH',
+    body: { motivo },
+    token,
+  });
+}
+
+export function rejectUser(id, token, motivo) {
+  return api(`/admin/usuarios/${id}/rechazar`, {
+    method: 'PATCH',
+    body: { motivo },
+    token,
+  });
+}
+
+export function listOficioSuggestions(token, estado = 'PENDIENTE') {
+  const query = estado && estado !== 'todos' ? `?estado=${encodeURIComponent(estado)}` : '';
+  return api(`/admin/sugerencias${query}`, { token });
+}
+
+export function reviewOficioSuggestion(id, accion, token, motivo) {
+  return api(`/admin/sugerencias/${id}`, {
+    method: 'PATCH',
+    body: { accion, motivo },
+    token,
+  });
+}
+
+export function suggestOficio(body, token) {
+  return api('/oficios/sugerencias', {
+    method: 'POST',
+    body,
+    token,
+  });
+}
+
+export function listMyOficioSuggestions(token) {
+  return api('/oficios/sugerencias', { token });
+}
+
 export function listCategories(token) {
   return listResource('categorias', { order: 'nombre:asc' }, token);
 }

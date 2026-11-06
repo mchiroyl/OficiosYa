@@ -23,11 +23,16 @@ import AdminCategories from './pages/AdminCategories';
 import AdminZones from './pages/AdminZones';
 import AdminDpi from './pages/AdminDpi';
 import AdminReports from './pages/AdminReports';
+import AdminSuggestions from './pages/AdminSuggestions';
+import AdminLogin from './pages/AdminLogin';
+import AdminRegister from './pages/AdminRegister';
 import { Router, matchPath, useNavigate, usePath } from './router';
 import { AuthProvider, useAuth } from './auth/AuthContext';
 import { ModeProvider, useMode } from './mode/ModeContext';
+import { isAdminUser } from './lib/admin';
 
-const AUTH_PATHS = new Set(['/login', '/register', '/forgot-password', '/reset-password']);
+const AUTH_PATHS = new Set(['/login', '/register', '/forgot-password', '/reset-password', '/admin/login', '/admin/register']);
+const ADMIN_LOGIN = '/admin/login';
 const RETURN_PATH_KEY = 'oficiosya.next';
 
 function safeReturnPath(value) {
@@ -59,9 +64,11 @@ function WorkerRoute({ children }) {
 function AuthenticatedApp() {
   const path = usePath();
   const { isWorker } = useMode();
+  const { isAdmin, user } = useAuth();
   const chatThread = matchPath(CHAT_THREAD_PATTERN, path);
   const legacyChat = matchPath(LEGACY_CHAT_PATTERN, path);
   const categoryParams = matchPath(CATEGORY_PATTERN, path);
+  const admin = isAdmin || isAdminUser(user);
 
   if (path === '/mis-solicitudes' || path === '/client/requests') return <ClientDashboard />;
   if (path === '/trabajador/bandeja' || path === '/worker/requests') {
@@ -97,23 +104,30 @@ function AuthenticatedApp() {
   if (legacyChat) return null; // AppRoutes redirige a /chat/:id
   if (path === '/admin') return <AdminDashboard />;
   if (path === '/admin/usuarios') return <AdminUsers />;
+  if (path === '/admin/sugerencias') return <AdminSuggestions />;
   if (path === '/admin/categorias') return <AdminCategories />;
   if (path === '/admin/zonas') return <AdminZones />;
   if (path === '/admin/dpi') return <AdminDpi />;
   if (path === '/admin/reportes' || path === '/admin/reports') return <AdminReports />;
   if (path === '/buscar' || categoryParams) return <SearchDirectory />;
 
+  if (admin) return <AdminDashboard />;
   if (isWorker) return <WorkerHome />;
   return <ClientHome />;
+}
+
+function isAdminPath(path) {
+  return path === '/admin' || path.startsWith('/admin/');
 }
 
 function AppRoutes() {
   const path = usePath();
   const navigate = useNavigate();
-  const { ready, isAuthenticated } = useAuth();
+  const { ready, isAuthenticated, isAdmin, user } = useAuth();
   const { mode, setMode } = useMode();
   const publicWorkerParams = matchPath(PUBLIC_WORKER_PATTERN, path);
   const legacyChat = matchPath(LEGACY_CHAT_PATTERN, path);
+  const admin = isAdmin || isAdminUser(user);
 
   useEffect(() => {
     if (!ready) return;
@@ -125,10 +139,28 @@ function AppRoutes() {
       return;
     }
 
+    if (!isAuthenticated && isAdminPath(path) && path !== ADMIN_LOGIN && path !== '/admin/register') {
+      navigate(ADMIN_LOGIN, { replace: true });
+      return;
+    }
+
+    if (isAuthenticated && admin) {
+      if (AUTH_PATHS.has(path) || !isAdminPath(path)) {
+        sessionStorage.removeItem(RETURN_PATH_KEY);
+        navigate('/admin', { replace: true });
+      }
+      return;
+    }
+
+    if (isAuthenticated && isAdminPath(path)) {
+      navigate('/', { replace: true });
+      return;
+    }
+
     if (isAuthenticated && AUTH_PATHS.has(path)) {
       const next = safeReturnPath(sessionStorage.getItem(RETURN_PATH_KEY));
       sessionStorage.removeItem(RETURN_PATH_KEY);
-      navigate(next, { replace: true });
+      navigate(next === ADMIN_LOGIN ? '/' : next, { replace: true });
       return;
     }
 
@@ -136,7 +168,7 @@ function AppRoutes() {
       sessionStorage.setItem(RETURN_PATH_KEY, `${path}${window.location.search || ''}`);
       navigate('/login', { replace: true });
     }
-  }, [isAuthenticated, legacyChat, navigate, path, publicWorkerParams, ready]);
+  }, [admin, isAuthenticated, legacyChat, navigate, path, publicWorkerParams, ready]);
 
   if (!ready) {
     return <div style={{ minHeight: '100vh', background: '#ffffff' }} />;
@@ -152,6 +184,14 @@ function AppRoutes() {
 
   if (isAuthenticated && !AUTH_PATHS.has(path)) {
     return <AuthenticatedApp />;
+  }
+
+  if (path === ADMIN_LOGIN || path === '/admin/register') {
+    return (
+      <AuthLayout mode="admin" hideMode>
+        {path === ADMIN_LOGIN ? <AdminLogin /> : <AdminRegister />}
+      </AuthLayout>
+    );
   }
 
   const content =

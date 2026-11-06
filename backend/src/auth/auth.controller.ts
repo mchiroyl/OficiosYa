@@ -32,6 +32,7 @@ import { LoginDto } from './dto/login.dto';
 import { RefreshTokenDto } from './dto/refresh-token.dto';
 import { RegisterDto } from './dto/register.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
+import { AprobarCuentaDto } from './dto/aprobar-cuenta.dto';
 import { SancionCuentaDto } from './dto/sancion-cuenta.dto';
 import { UpdateEstadoDto } from './dto/update-estado.dto';
 import { ResendVerificationDto, VerifyEmailDto } from './dto/verify-email.dto';
@@ -51,6 +52,20 @@ export class AuthController {
   })
   register(@Body() dto: RegisterDto) {
     return this.authService.register(dto);
+  }
+
+  @Post('admin/auth/register')
+  @ApiTags('Admin')
+  @ApiOperation({ summary: 'Registrar un administrador autorizado' })
+  registerAdmin(@Body() dto: RegisterDto) {
+    return this.authService.registerAdmin(dto);
+  }
+
+  @Post('admin/auth/login')
+  @ApiTags('Admin')
+  @ApiOperation({ summary: 'Iniciar sesión como administrador' })
+  loginAdmin(@Body() dto: LoginDto) {
+    return this.authService.loginAdmin(dto);
   }
 
   @Post('auth/login')
@@ -190,5 +205,31 @@ export class AuthController {
     @Body() dto: UpdateEstadoDto,
   ) {
     return this.authService.updateEstado(admin, id, dto.estado);
+  }
+
+  @Patch('admin/usuarios/:id/aprobar')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth('access-token')
+  @ApiTags('Admin')
+  @ApiOperation({ summary: 'Aprobar un cliente o trabajador pendiente' })
+  aprobarCuenta(
+    @CurrentUser() admin: UsuarioRow,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AprobarCuentaDto,
+  ) {
+    return this.authService.aprobarCuenta(admin, id, dto.motivo);
+  }
+
+  @Patch('admin/usuarios/:id/rechazar')
+  @UseGuards(JwtAuthGuard, AdminGuard)
+  @ApiBearerAuth('access-token')
+  @ApiTags('Admin')
+  @ApiOperation({ summary: 'Rechazar un cliente o trabajador pendiente' })
+  rechazarCuenta(
+    @CurrentUser() admin: UsuarioRow,
+    @Param('id', ParseIntPipe) id: number,
+    @Body() dto: AprobarCuentaDto,
+  ) {
+    return this.authService.rechazarCuenta(admin, id, dto.motivo);
   }
 }

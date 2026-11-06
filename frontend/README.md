@@ -22,7 +22,7 @@ O doble clic en `start.bat`.
 
 ## Admin
 
-El menú Admin aparece si el backend marca `es_admin` o si el correo está en `VITE_ADMIN_EMAILS` (por defecto `admin@oficiosya.gt`).
+El panel de administración está separado en `/admin`. El servidor concede ese rol únicamente a las cuentas habilitadas en `ADMIN_EMAILS` y el frontend utiliza el rol devuelto por la API.
 
 ## Rutas principales
 

@@ -4,20 +4,20 @@ import { useAuth } from '../auth/AuthContext';
 import { Link } from '../router';
 import styles from './TopBar.module.css';
 
-export default function TopBar({ mode, onModeChange }) {
+export default function TopBar({ mode, onModeChange, hideMode = false }) {
   const { isAuthenticated, isAdmin, logout } = useAuth();
 
   return (
     <header className={styles.bar}>
       <div className={styles.inner}>
-        <Link to="/" className={styles.brand} aria-label="Ir al inicio">
+        <Link to={hideMode ? '/admin/login' : '/'} className={styles.brand} aria-label="Ir al inicio">
           <Logo variant="compact" />
           <span className={styles.brandName}>
             Oficios<span className={styles.brandAccent}>YA</span>
           </span>
         </Link>
         <div className={styles.toggleWrap}>
-          <ModeToggle value={mode} onChange={onModeChange} />
+          {hideMode ? null : <ModeToggle value={mode} onChange={onModeChange} />}
           {isAuthenticated ? (
             <nav className={styles.nav} aria-label="Navegación principal">
               <Link to="/" className={styles.navLink}>

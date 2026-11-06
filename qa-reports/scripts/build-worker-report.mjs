@@ -32,7 +32,7 @@ const REPO = path.resolve(QA_ROOT, '..');
 const WORKER = path.join(QA_ROOT, 'worker');
 const RESULTS = path.join(WORKER, 'results.json');
 const OUTPUT = path.join(WORKER, 'Informe_QA_E2E_Modo_Trabajador.docx');
-const VERSION = '1.0';
+const VERSION = '1.1';
 
 if (!fs.existsSync(RESULTS)) {
   console.error(`No existe ${RESULTS}. Ejecuta primero frontend/tests/qa/worker-mode.e2e.spec.js.`);
@@ -239,22 +239,10 @@ const nb = (text) => String(text).replaceAll('-', '\u2011');
 // Hallazgos vistos solo en el código (no reproducidos en esta prueba).
 const SUSPECTED = [
   {
-    title: 'Otros recursos del CRUD genérico sin control de propietario',
-    detail:
-      'El mismo patrón confirmado en TRB-14 y TRB-17 (servicios y portafolio) aplica a perfiles-trabajador, perfiles-zona, cotizaciones y bitácora: cualquier usuario con sesión podría editarlos o borrarlos. No se probó en esta ronda.',
-    location: 'backend/src/resources/resources.config.ts y resource.service.ts',
-  },
-  {
     title: 'Las páginas del trabajador no comprueban el modo ni el perfil',
     detail:
-      'App.jsx muestra /worker/profile, /worker/content y /trabajador/bandeja a cualquier usuario autenticado, también en Modo Cliente o sin perfil de trabajador. Queda para la prueba del modo cliente.',
+      'App.jsx muestra /worker/profile, /worker/content y /trabajador/bandeja a cualquier usuario autenticado, también en Modo Cliente o sin perfil de trabajador. Se cubre en el informe del modo cliente.',
     location: 'frontend/src/App.jsx (AuthenticatedApp)',
-  },
-  {
-    title: 'Borrar un servicio con solicitudes mostraría un error SQL en inglés',
-    detail:
-      'Confirmado por API en TRB-14 (DELETE responde 400 con "violates foreign key constraint fk_solicitud_servicio"). En la pantalla, el botón "Eliminar" de un servicio con solicitudes mostraría ese texto, pero no se reprodujo desde la interfaz.',
-    location: 'backend/src/resources/resource.service.ts (devuelve error.message de Supabase)',
   },
   {
     title: 'Página RequestChat.jsx sin uso y que no funcionaría',
@@ -298,7 +286,7 @@ const topBugs = bugs.filter((b) => ['Crítica', 'Alta'].includes(b.severity));
 children.push(
   h1('1. Resumen ejecutivo'),
   p(
-    `Se ejecutaron ${results.length} casos de prueba de extremo a extremo (TRB-01 a TRB-28) del modo trabajador contra el backend real (Supabase), en Google Chrome, en escritorio (1366 × 768) y, para ${casesWithMobile.length} casos, también en móvil (390 × 844). Se tomaron ${results.reduce((n, r) => n + r.evidence.length, 0)} capturas de pantalla.`,
+    `Versión ${VERSION}: reejecución completa tras las correcciones del informe 1.0. Se ejecutaron ${results.length} casos de prueba de extremo a extremo (TRB-01 a TRB-28) del modo trabajador contra el backend real (Supabase), en Google Chrome, en escritorio (1366 × 768) y, para ${casesWithMobile.length} casos, también en móvil (390 × 844). Se tomaron ${results.reduce((n, r) => n + r.evidence.length, 0)} capturas de pantalla.`,
   ),
   table(
     ['Resultado', 'Casos', 'Significado'],
@@ -324,7 +312,10 @@ children.push(
     run('Valoración: ', { bold: true }),
     run(
       bySeverity['Crítica'] > 0
-        ? 'el modo trabajador no está listo para producción. Hay fallos críticos de autorización (un trabajador puede modificar o borrar datos de otro) y dos funciones básicas de "Contenido" no responden al botón. Lo que sí está bien resuelto: inicio de sesión, cambio de modo, filtros de la bandeja, rechazo con motivo, respuesta única a reseñas, chat en vivo, protección contra XSS en el chat y permisos de solicitudes y chats ajenos.'
+        ? `el modo trabajador no está listo para producción. Fallos críticos: ${topBugs
+            .filter((b) => b.severity === 'Crítica')
+            .map((b) => b.title)
+            .join('; ') || 'véase la sección 5'}.`
         : 'no hay fallos críticos; los problemas encontrados se pueden corregir de forma incremental.',
     ),
   ]),
@@ -459,12 +450,7 @@ children.push(pageBreak());
 children.push(h1('7. Casos bloqueados'));
 if (!blocked.length) {
   children.push(
-    p('Ningún caso quedó bloqueado. Los que necesitaban datos previos los obtuvieron con las cuentas de prueba (ver 2.1):'),
-    ...[
-      'TRB-18 y TRB-19: la cuenta de cliente creó la reseña sobre la solicitud finalizada en TRB-21.',
-      'TRB-24 a TRB-26: la cuenta de cliente creó las solicitudes, y A aceptó una de ellas por API para habilitar el chat.',
-      'TRB-12, TRB-15 y TRB-16: como el botón del formulario no funciona, se envió con Enter para poder comprobar el resto del caso. El defecto del botón queda registrado como bug.',
-    ].map((t) => bullet(t)),
+    p('Ningún caso quedó bloqueado. Los que necesitaban datos previos los obtuvieron con las cuentas de prueba (ver 2.1).'),
   );
 } else {
   children.push(table(['ID', 'Caso', 'Motivo'], blocked.map((r) => [cell(nb(r.id), { bold: true, width: 12 }), cell(r.title, { width: 38 }), cell(r.blockedReason, { width: 50 })]), [12, 38, 50]));
@@ -481,10 +467,10 @@ children.push(
   ...numbered([
     ...bugs.filter((b) => b.severity === 'Crítica').map((b) => `${b.code}: ${b.title}.`),
     ...bugs.filter((b) => b.severity === 'Alta').map((b) => `${b.code}: ${b.title}.`),
-    'Después, los bugs medios y bajos y las observaciones de accesibilidad (etiquetas en el interruptor de disponibilidad y en los campos del portafolio).',
+    'Después, los bugs medios y bajos y las observaciones de UI/UX de la sección 6.',
   ]),
   p(''),
-  p('Tras corregir, conviene repetir esta misma prueba (el spec es reutilizable) y luego hacer la ronda del modo cliente.'),
+  p('Esta es la reejecución posterior a las correcciones del informe 1.0. El spec sigue siendo reutilizable; la ronda del modo cliente se documenta por separado.'),
   pageBreak(),
 );
 

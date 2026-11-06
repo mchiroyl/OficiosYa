@@ -2,3 +2,5 @@ node_modules/
 .qa-credentials.json
 worker/results.json
 worker/fixtures/
+client/results.json
+client/fixtures/

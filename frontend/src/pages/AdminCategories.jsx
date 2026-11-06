@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import AppHeader from '../components/AppHeader';
+import AdminHeader from '../components/AdminHeader';
 import BackLink from '../components/BackLink';
 import { useAuth } from '../auth/AuthContext';
 import { isAdminUser } from '../lib/admin';
@@ -64,7 +64,7 @@ export default function AdminCategories() {
   if (!isAdminUser(user)) {
     return (
       <div className={styles.page}>
-        <AppHeader />
+        <AdminHeader />
         <main className={styles.main}><div className={styles.empty}>Sin permisos.</div></main>
       </div>
     );
@@ -72,7 +72,7 @@ export default function AdminCategories() {
 
   return (
     <div className={styles.page}>
-      <AppHeader />
+      <AdminHeader />
       <main className={styles.main}>
         <BackLink to="/admin">Volver al dashboard</BackLink>
         <header className={styles.header}>
@@ -133,6 +133,7 @@ export default function AdminCategories() {
                   </td>
                 </tr>
               ))}
+              {!items.length && <tr><td colSpan={3}>No hay categorías todavía. Añade la primera con el formulario superior.</td></tr>}
             </tbody>
           </table>
         </div>

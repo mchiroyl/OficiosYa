@@ -37,11 +37,11 @@ export default function AppHeader() {
         </Link>
 
         <div className={styles.modeWrap}>
-          <ModeToggle value={mode} onChange={onModeChange} />
+          {admin || isAdmin ? null : <ModeToggle value={mode} onChange={onModeChange} />}
         </div>
 
         <nav className={styles.nav} aria-label="Principal">
-          {isClient && (
+          {isClient && !admin && !isAdmin && (
             <>
               <Link to="/" className={linkClass('/')}>
                 Inicio
@@ -57,7 +57,7 @@ export default function AppHeader() {
               </Link>
             </>
           )}
-          {isWorker && (
+          {isWorker && !admin && !isAdmin && (
             <>
               <Link to="/" className={linkClass('/')}>
                 Panel

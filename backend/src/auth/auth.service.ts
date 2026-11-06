@@ -24,6 +24,7 @@ import { ResetPasswordDto } from './dto/reset-password.dto';
 import { ResendVerificationDto, VerifyEmailDto } from './dto/verify-email.dto';
 import { correoEsAdmin } from './admin-emails';
 import { AccionSancion } from './dto/sancion-cuenta.dto';
+import { normalizeRol, rolDesdeModo, ROL_ADMINISTRADOR, RolUsuario } from './roles';
 import { MailSimulatorService } from './recovery/mail-simulator.service';
 import { RecoveryTokenStore } from './recovery/recovery-token.store';
 
@@ -40,10 +41,33 @@ export class AuthService {
   ) {}
 
   async register(dto: RegisterDto) {
+    if (correoEsAdmin(dto.correo, this.config.get<string>('ADMIN_EMAILS'))) {
+      throw new ForbiddenException('Usa el registro exclusivo de administración.');
+    }
+    return this.createAccount(dto, false);
+  }
+
+  async registerAdmin(dto: RegisterDto) {
+    const allowTestRegistration = this.config.get<string>('NODE_ENV') === 'development' &&
+      this.config.get<string>('ADMIN_ALLOW_TEST_REGISTRATION') === 'true';
+    if (!allowTestRegistration && !correoEsAdmin(dto.correo, this.config.get<string>('ADMIN_EMAILS'))) {
+      throw new ForbiddenException('Este correo no está habilitado para administración. Configúralo en ADMIN_EMAILS del servidor.');
+    }
+    return this.createAccount(dto, true);
+  }
+
+  private async createAccount(dto: RegisterDto, adminRegistration: boolean) {
     const correo = dto.correo.toLowerCase();
     const existing = await this.findUsuarioByCorreo(correo);
     if (existing) {
       throw new ConflictException('Ya existe una cuenta con ese correo.');
+    }
+
+    if (adminRegistration) {
+      const { error } = await this.supabase.from('usuario').select('rol').limit(1);
+      if (error) {
+        throw new BadRequestException('No se pudo preparar el rol administrador. Aplica la migración 003_rol_admin_sugerencias.sql.');
+      }
     }
 
     const passwordHash = await bcrypt.hash(dto.password, 12);
@@ -70,15 +94,40 @@ export class AuthService {
       );
     }
 
+    const porCorreoAdmin = adminRegistration;
+    const rol: RolUsuario = porCorreoAdmin ? ROL_ADMINISTRADOR : rolDesdeModo(dto.modo);
+    const estado = porCorreoAdmin ? 'ACTIVO' : 'PENDIENTE';
+
     const usuario = await this.insertUsuario({
       nombre: dto.nombre,
       correo,
       telefono,
       password_hash: passwordHash,
+      rol,
+      estado,
+      modo_activo: porCorreoAdmin,
     });
 
     await this.registrarBitacora(usuario.id_usuario, 'REGISTER', 'usuario');
-    await this.ensureWorkerProfile(usuario, dto);
+    if (rol === 'TRABAJADOR') {
+      await this.ensureWorkerProfile(usuario, dto);
+    }
+
+    if (!porCorreoAdmin) {
+      return {
+        user: publicUsuario(usuario),
+        tokens: null,
+        rememberMe: false,
+        tienePerfilTrabajador: Boolean(await this.findPerfil(usuario.id_usuario)),
+        perfilTrabajador: await this.findPerfil(usuario.id_usuario),
+        needsLogin: true,
+        needsApproval: true,
+        es_admin: false,
+        rol: usuario.rol || rol,
+        message:
+          'Cuenta creada. Un administrador debe aprobarla antes de que puedas iniciar sesión.',
+      };
+    }
 
     const session = await this.signInAfterRegister(correo, dto.password, usuario);
     if (!session) {
@@ -90,6 +139,7 @@ export class AuthService {
         perfilTrabajador: await this.findPerfil(usuario.id_usuario),
         needsLogin: true,
         es_admin: this.esAdmin(usuario),
+        rol: usuario.rol || rol,
         message: 'Cuenta creada exitosamente. Inicia sesión para continuar.',
       };
     }
@@ -97,11 +147,25 @@ export class AuthService {
   }
 
   async login(dto: LoginDto) {
+    return this.signInAccount(dto, false);
+  }
+
+  async loginAdmin(dto: LoginDto) {
+    return this.signInAccount(dto, true);
+  }
+
+  private async signInAccount(dto: LoginDto, adminLogin: boolean) {
     const correo = dto.correo.toLowerCase();
     const usuario = await this.findUsuarioByCorreo(correo);
 
     if (!usuario) {
       throw new UnauthorizedException('Correo o contraseña incorrectos.');
+    }
+
+    if (this.esAdmin(usuario) !== adminLogin) {
+      throw new UnauthorizedException(adminLogin
+        ? 'Esta cuenta no tiene acceso administrativo.'
+        : 'Usa el acceso exclusivo de administración.');
     }
 
     const bloqueo = assertCuentaOperable(usuario);
@@ -125,8 +189,9 @@ export class AuthService {
       }
     }
 
-    await this.registrarBitacora(usuario.id_usuario, 'LOGIN', 'usuario');
-    return this.buildAuthResponse(usuario, session, dto.rememberMe === true);
+    const synced = await this.syncAdminRol(usuario);
+    await this.registrarBitacora(synced.id_usuario, 'LOGIN', 'usuario');
+    return this.buildAuthResponse(synced, session, dto.rememberMe === true);
   }
 
   async logout(accessToken?: string) {
@@ -150,12 +215,14 @@ export class AuthService {
   }
 
   async me(usuario: UsuarioRow) {
-    const perfil = await this.findPerfil(usuario.id_usuario);
+    const synced = await this.syncAdminRol(usuario);
+    const perfil = await this.findPerfil(synced.id_usuario);
     return {
-      user: publicUsuario(usuario),
+      user: publicUsuario(synced),
       tienePerfilTrabajador: Boolean(perfil),
       perfilTrabajador: perfil,
-      es_admin: this.esAdmin(usuario),
+      es_admin: this.esAdmin(synced),
+      rol: this.rolPublico(synced),
     };
   }
 
@@ -418,6 +485,63 @@ export class AuthService {
     };
   }
 
+  async aprobarCuenta(admin: UsuarioRow, idUsuario: number, motivo?: string) {
+    if (admin.id_usuario === idUsuario) {
+      throw new ForbiddenException('No puedes aprobar tu propia cuenta.');
+    }
+    const usuario = await this.findUsuarioById(idUsuario);
+    if (!usuario) {
+      throw new BadRequestException('Usuario no encontrado.');
+    }
+    if (this.esAdmin(usuario)) {
+      throw new ForbiddenException('No puedes modificar a otro administrador.');
+    }
+    if (usuario.estado === 'ELIMINADO') {
+      throw new BadRequestException('Una cuenta eliminada no se puede aprobar.');
+    }
+    if (usuario.estado === 'ACTIVO' && usuario.modo_activo) {
+      throw new ConflictException('La cuenta ya está aprobada.');
+    }
+
+    const updated = await this.patchUsuario(idUsuario, {
+      estado: 'ACTIVO',
+      modo_activo: true,
+    });
+    await this.registrarBitacora(admin.id_usuario, 'ADMIN_APROBAR_USUARIO', 'usuario');
+    return {
+      user: publicUsuario(updated),
+      motivo: motivo?.trim() || null,
+      message: 'La cuenta fue aprobada y ya puede iniciar sesión.',
+    };
+  }
+
+  async rechazarCuenta(admin: UsuarioRow, idUsuario: number, motivo?: string) {
+    if (admin.id_usuario === idUsuario) {
+      throw new ForbiddenException('No puedes rechazar tu propia cuenta.');
+    }
+    const usuario = await this.findUsuarioById(idUsuario);
+    if (!usuario) {
+      throw new BadRequestException('Usuario no encontrado.');
+    }
+    if (this.esAdmin(usuario)) {
+      throw new ForbiddenException('No puedes modificar a otro administrador.');
+    }
+    if (usuario.estado === 'ACTIVO') {
+      throw new BadRequestException('Una cuenta activa se suspende o se banea; no se rechaza.');
+    }
+
+    const updated = await this.patchUsuario(idUsuario, {
+      estado: 'INACTIVO',
+      modo_activo: false,
+    });
+    await this.registrarBitacora(admin.id_usuario, 'ADMIN_RECHAZAR_USUARIO', 'usuario');
+    return {
+      user: publicUsuario(updated),
+      motivo: motivo?.trim() || null,
+      message: 'La cuenta fue rechazada.',
+    };
+  }
+
   async findUsuarioByCorreo(correo: string): Promise<UsuarioRow | null> {
     const { data, error } = await this.supabase
       .from('usuario')
@@ -458,13 +582,15 @@ export class AuthService {
     correo: string;
     telefono: string | null;
     password_hash: string;
+    rol: RolUsuario;
+    estado: string;
+    modo_activo: boolean;
   }): Promise<UsuarioRow> {
-    const payload = {
-      ...row,
-      modo_activo: true,
-      estado: 'ACTIVO',
-    };
+    const payload: Record<string, unknown> = { ...row };
+    return this.insertUsuarioPayload(payload);
+  }
 
+  private async insertUsuarioPayload(payload: Record<string, unknown>): Promise<UsuarioRow> {
     const { data, error } = await this.supabase
       .from('usuario')
       .insert(payload)
@@ -473,6 +599,24 @@ export class AuthService {
 
     if (!error && data) {
       return data as UsuarioRow;
+    }
+
+    if (this.columnMissing(error?.message, 'rol')) {
+      const { rol: _rol, ...withoutRol } = payload;
+      return this.insertUsuarioPayload(withoutRol);
+    }
+
+    if (
+      payload.estado === 'PENDIENTE' &&
+      /chk_usuario_estado|invalid input value for enum|violates check constraint/i.test(
+        error?.message || '',
+      )
+    ) {
+      return this.insertUsuarioPayload({
+        ...payload,
+        estado: 'INACTIVO',
+        modo_activo: false,
+      });
     }
 
     if (this.isMissingIdError(error?.message)) {
@@ -664,11 +808,42 @@ export class AuthService {
       tienePerfilTrabajador: Boolean(perfil),
       perfilTrabajador: perfil,
       es_admin: this.esAdmin(usuario),
+      rol: this.rolPublico(usuario),
     };
   }
 
   esAdmin(usuario: UsuarioRow) {
+    if (normalizeRol(usuario.rol) === ROL_ADMINISTRADOR) return true;
     return correoEsAdmin(usuario.correo, this.config.get<string>('ADMIN_EMAILS'));
+  }
+
+  private rolPublico(usuario: UsuarioRow) {
+    if (this.esAdmin(usuario)) return ROL_ADMINISTRADOR;
+    return normalizeRol(usuario.rol) || rolDesdeModo(null);
+  }
+
+  private async syncAdminRol(usuario: UsuarioRow) {
+    const porCorreo = correoEsAdmin(usuario.correo, this.config.get<string>('ADMIN_EMAILS'));
+    if (!porCorreo) return usuario;
+    if (normalizeRol(usuario.rol) === ROL_ADMINISTRADOR && usuario.estado === 'ACTIVO') {
+      return usuario;
+    }
+    try {
+      return await this.patchUsuario(usuario.id_usuario, {
+        rol: ROL_ADMINISTRADOR,
+        estado: 'ACTIVO',
+        modo_activo: true,
+      });
+    } catch {
+      return { ...usuario, rol: ROL_ADMINISTRADOR, estado: 'ACTIVO', modo_activo: true };
+    }
+  }
+
+  private columnMissing(message: string | undefined, column: string) {
+    if (!message) return false;
+    return new RegExp(`column ["']?${column}["']? .*does not exist|could not find the ['"]${column}['"]`, 'i').test(
+      message,
+    );
   }
 
   private sessionPayload(session: {

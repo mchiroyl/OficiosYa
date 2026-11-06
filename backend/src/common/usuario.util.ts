@@ -6,6 +6,7 @@ export type UsuarioRow = {
   password_hash?: string;
   modo_activo: boolean;
   estado: string;
+  rol?: string | null;
 };
 
 export type PerfilTrabajadorRow = {
@@ -20,6 +21,9 @@ export function publicUsuario(usuario: UsuarioRow) {
 }
 
 export function assertCuentaOperable(usuario: UsuarioRow) {
+  if (usuario.estado === 'PENDIENTE') {
+    return 'Tu cuenta está pendiente de aprobación por un administrador.';
+  }
   if (!usuario.modo_activo) {
     return 'La cuenta está desactivada.';
   }
@@ -28,6 +32,9 @@ export function assertCuentaOperable(usuario: UsuarioRow) {
   }
   if (usuario.estado === 'ELIMINADO') {
     return 'La cuenta fue eliminada.';
+  }
+  if (usuario.estado === 'INACTIVO') {
+    return 'Tu cuenta está pendiente de aprobación o no está activa.';
   }
   if (usuario.estado !== 'ACTIVO') {
     return 'La cuenta no está disponible.';

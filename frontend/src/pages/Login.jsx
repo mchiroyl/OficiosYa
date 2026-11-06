@@ -114,15 +114,17 @@ export default function Login() {
             <CheckCircleIcon />
           </span>
           <div className={styles.toastCopy}>
-            <p className={styles.toastTitle}>Cuenta creada exitosamente.</p>
+            <p className={styles.toastTitle}>{toast.pending ? 'Cuenta registrada' : 'Cuenta creada exitosamente.'}</p>
             <p className={styles.toastText}>
-              Registramos tu usuario correctamente. Inicia sesión
-              {toast.correo ? (
+              {toast.pending
+                ? 'Un administrador debe aprobar tu cuenta antes de que puedas iniciar sesión.'
+                : 'Registramos tu usuario correctamente. Inicia sesión'}
+              {!toast.pending && toast.correo ? (
                 <>
                   {' '}con <span className={styles.toastEmail}>{toast.correo}</span>
                 </>
               ) : null}{' '}
-              para continuar.
+              {!toast.pending ? 'para continuar.' : null}
             </p>
           </div>
         </div>
@@ -196,6 +198,11 @@ export default function Login() {
         ¿No tienes una cuenta?{' '}
         <Link to="/register" className={authStyles.footerLink}>
           Crear cuenta
+        </Link>
+      </p>
+      <p className={authStyles.footer}>
+        <Link to="/admin/login" className={authStyles.footerLink}>
+          Acceso de administrador
         </Link>
       </p>
     </div>
